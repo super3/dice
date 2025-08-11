@@ -10,7 +10,10 @@ const roundNumber = document.querySelector('#round-number');
 const targetScore = document.querySelector('#target-score');
 const rerollsLeft = document.querySelector('#rerolls-left');
 const moneyAmount = document.querySelector('#money-amount');
-const earningsDetails = document.querySelector('#earnings-details');
+const roundSummary = document.querySelector('#round-summary');
+const earningsContent = document.querySelector('#earnings-content');
+const buyDiceBtn = document.querySelector('#buy-dice-btn');
+const dicePrice = document.querySelector('#dice-price');
 
 let renderer, scene, camera, diceMesh, physicsWorld;
 let raycaster, mouse;
@@ -28,7 +31,9 @@ const gameState = {
     roundComplete: false,
     hasRolled: false,  // Track if dice have been rolled yet
     money: 0,  // Player's money
-    lastEarnings: 0  // Track earnings from last round
+    lastEarnings: 0,  // Track earnings from last round
+    diceBaseCost: 10,  // Base cost for dice
+    dicePurchased: 0  // Track number of dice purchased
 };
 
 // Target scores for each round (gets progressively harder)
@@ -51,6 +56,12 @@ window.addEventListener('resize', updateSceneSize);
 window.addEventListener('dblclick', handleRoll);
 rollBtn.addEventListener('click', handleRoll);
 nextRoundBtn.addEventListener('click', nextRound);
+if (buyDiceBtn) {
+    buyDiceBtn.addEventListener('click', buyDice);
+    console.log('Buy dice button listener added');
+} else {
+    console.error('Buy dice button not found!');
+}
 canvasEl.addEventListener('click', handleDiceClick);
 canvasEl.addEventListener('mousemove', handleMouseMove);
 
@@ -92,6 +103,9 @@ function initScene() {
         diceArray.push(createDice(i));
         addDiceEvents(diceArray[i], i);
     }
+    
+    // Position initial dice
+    repositionAllDice();
 
     // Initialize game
     updateUI();
@@ -160,9 +174,8 @@ function createDice(index) {
         sleepTimeLimit: .1
     });
     
-    // Set initial position for dice (centered, at rest)
-    const startX = (index - (params.numberOfDice - 1) / 2) * 2;
-    body.position.set(startX, 0, 0);
+    // Set initial position for dice (will be positioned properly later)
+    body.position.set(0, 0, 0);
     mesh.position.copy(body.position);
     
     // Create lock sprite for this dice
@@ -369,6 +382,10 @@ function checkRoundComplete() {
         // Calculate earnings
         calculateEarnings();
         
+        // Show round summary (earnings + store)
+        roundSummary.style.display = 'flex';
+        updateStoreUI();
+        
         // Visual feedback for winning
         scoreResult.style.color = '#2e8b57';
     } else if (gameState.rerollsRemaining === 0) {
@@ -387,17 +404,17 @@ function checkRoundComplete() {
 
 function calculateEarnings() {
     let earnings = 0;
-    let detailsHtml = [];
+    let detailsHtml = '<table class="earnings-table">';
     
     // Base earnings: difference between score and target
     const baseEarnings = gameState.currentScore - gameState.targetScore;
     earnings += baseEarnings;
-    detailsHtml.push(`Base earnings (${gameState.currentScore} - ${gameState.targetScore}): <span class="earning-positive">+$${baseEarnings}</span>`);
+    detailsHtml += `<tr><td>Base (${gameState.currentScore} - ${gameState.targetScore})</td><td class="earning-positive">+$${baseEarnings}</td></tr>`;
     
     // Perfect roll bonus: exactly hit the target
     if (gameState.currentScore === gameState.targetScore) {
         earnings += 10;
-        detailsHtml.push(`Perfect Roll Bonus: <span class="earning-positive">+$10</span>`);
+        detailsHtml += `<tr><td>Perfect Roll</td><td class="earning-positive">+$10</td></tr>`;
     }
     
     // Efficiency bonus: $2 per unused reroll
@@ -405,8 +422,12 @@ function calculateEarnings() {
     if (unusedRerolls > 0) {
         const efficiencyBonus = unusedRerolls * 2;
         earnings += efficiencyBonus;
-        detailsHtml.push(`Efficiency Bonus (${unusedRerolls} unused rerolls): <span class="earning-positive">+$${efficiencyBonus}</span>`);
+        detailsHtml += `<tr><td>${unusedRerolls} Unused Rerolls</td><td class="earning-positive">+$${efficiencyBonus}</td></tr>`;
     }
+    
+    // Total row
+    detailsHtml += `<tr class="total-row"><td><strong>Total</strong></td><td class="earning-total"><strong>+$${earnings}</strong></td></tr>`;
+    detailsHtml += '</table>';
     
     // Update money
     gameState.lastEarnings = earnings;
@@ -418,8 +439,7 @@ function calculateEarnings() {
     scoreResult.style.color = '#2e8b57';
     
     // Show earnings breakdown
-    earningsDetails.innerHTML = detailsHtml.join('<br>') + `<br><strong>Total Earned: <span class="earning-total">+$${earnings}</span></strong>`;
-    earningsDetails.style.display = 'block';
+    earningsContent.innerHTML = detailsHtml;
 }
 
 
@@ -447,25 +467,27 @@ function nextRound() {
     rollBtn.disabled = false;
     rollBtn.textContent = 'Roll Dice';
     scoreResult.style.color = '#d45f2e';
-    earningsDetails.style.display = 'none';  // Hide earnings details
+    roundSummary.style.display = 'none';  // Hide round summary
     
     // Update dice visuals and clear all locks
     diceArray.forEach((dice, index) => {
-        updateDiceAppearance(dice, false);
-        if (lockSprites[dice.index]) {
-            lockSprites[dice.index].visible = false;
+        if (dice && dice.mesh) {  // Check if dice exists
+            updateDiceAppearance(dice, false);
+            if (lockSprites[dice.index]) {
+                lockSprites[dice.index].visible = false;
+            }
+            
+            // Reset dice to starting position without rolling
+            const startX = (index - (params.numberOfDice - 1) / 2) * 2;
+            dice.body.velocity.setZero();
+            dice.body.angularVelocity.setZero();
+            dice.body.position.set(startX, 1, 0);
+            dice.body.quaternion.set(0, 0, 0, 1);
+            dice.mesh.position.copy(dice.body.position);
+            dice.mesh.quaternion.copy(dice.body.quaternion);
+            dice.body.wakeUp();
+            dice.body.allowSleep = true;
         }
-        
-        // Reset dice to starting position without rolling
-        const startX = (index - (params.numberOfDice - 1) / 2) * 2;
-        dice.body.velocity.setZero();
-        dice.body.angularVelocity.setZero();
-        dice.body.position.set(startX, 1, 0);
-        dice.body.quaternion.set(0, 0, 0, 1);
-        dice.mesh.position.copy(dice.body.position);
-        dice.mesh.quaternion.copy(dice.body.quaternion);
-        dice.body.wakeUp();
-        dice.body.allowSleep = true;
     });
     
     updateUI();
@@ -485,13 +507,28 @@ function restartGame() {
     gameState.hasRolled = false;  // Reset hasRolled flag
     gameState.money = 0;  // Reset money on game restart
     gameState.lastEarnings = 0;
+    gameState.dicePurchased = 0;  // Reset dice purchases
+    
+    // Remove extra dice if any were purchased
+    while (params.numberOfDice > 2) {
+        const diceToRemove = diceArray.pop();
+        if (diceToRemove) {
+            scene.remove(diceToRemove.mesh);
+            physicsWorld.removeBody(diceToRemove.body);
+            if (lockSprites[diceToRemove.index]) {
+                scene.remove(lockSprites[diceToRemove.index]);
+                delete lockSprites[diceToRemove.index];
+            }
+        }
+        params.numberOfDice--;
+    }
     
     // Reset UI
     rollBtn.classList.remove('game-over');
     rollBtn.textContent = 'Roll Dice';
     rollBtn.disabled = false;
     scoreResult.style.color = '#d45f2e';
-    earningsDetails.style.display = 'none';  // Hide earnings details
+    roundSummary.style.display = 'none';  // Hide round summary
     
     // Restore original click handler
     rollBtn.removeEventListener('click', restartGame);
@@ -635,6 +672,60 @@ function updateSceneSize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function getDicePrice() {
+    // Price increases with each purchase: 10, 15, 25, 40, 60, 85...
+    return Math.floor(gameState.diceBaseCost * Math.pow(1.5, gameState.dicePurchased));
+}
+
+function updateStoreUI() {
+    const price = getDicePrice();
+    dicePrice.textContent = `$${price}`;
+    
+    // Disable buy button if can't afford
+    buyDiceBtn.disabled = gameState.money < price;
+}
+
+function buyDice() {
+    const price = getDicePrice();
+    console.log('Buy dice clicked. Price:', price, 'Money:', gameState.money);
+    
+    if (gameState.money >= price) {
+        // Deduct money
+        gameState.money -= price;
+        gameState.dicePurchased++;
+        
+        // Add new dice
+        const newIndex = params.numberOfDice;
+        
+        // Create and add the new dice (pass index before incrementing numberOfDice)
+        const newDice = createDice(newIndex);
+        diceArray.push(newDice);
+        addDiceEvents(newDice, newIndex);
+        
+        // Now increment the number of dice
+        params.numberOfDice++;
+        
+        // Reposition all dice to keep them centered
+        repositionAllDice();
+        
+        // Update UI
+        moneyAmount.textContent = `$${gameState.money}`;
+        updateStoreUI();
+        
+        console.log('Dice purchased! Total dice:', params.numberOfDice);
+    }
+}
+
+function repositionAllDice() {
+    diceArray.forEach((dice, index) => {
+        if (dice && dice.mesh) {
+            const startX = (index - (params.numberOfDice - 1) / 2) * 2;
+            dice.body.position.x = startX;
+            dice.mesh.position.x = startX;
+        }
+    });
 }
 
 function throwDice() {

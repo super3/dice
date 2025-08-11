@@ -49,7 +49,7 @@ canvas {
 .ui-controls {
     position: relative;
     width: 100%;
-    max-width: 500px;
+    max-width: 600px;
     font-family: inherit;
     user-select: none;
     line-height: 1.5;
@@ -67,6 +67,7 @@ canvas {
     gap: 3.5rem;
     width: 100%;
     margin-bottom: 1.5rem;
+    max-width: 100%;
 }
 
 .round, .target, .money {
@@ -89,6 +90,7 @@ canvas {
     text-align: center;
     margin-bottom: 1rem;
     width: 100%;
+    max-width: 100%;
 }
 
 .rerolls {
@@ -96,6 +98,7 @@ canvas {
     font-size: 1.2rem;
     margin-bottom: 0.5rem;
     width: 100%;
+    max-width: 100%;
 }
 
 .rerolls span {
@@ -109,6 +112,7 @@ canvas {
     color: #666;
     margin-bottom: 1.2rem;
     width: 100%;
+    max-width: 100%;
 }
 
 .ui-controls #score-result {
@@ -166,15 +170,57 @@ canvas {
 }
 
 
+.round-summary {
+    display: flex;
+    gap: 1rem;
+    margin: 0.5rem 0;
+    align-items: stretch;
+    width: 100%;
+}
+
 .earnings-details {
+    flex: 1;
     background: rgba(46, 139, 87, 0.1);
     border: 2px solid #2e8b57;
     border-radius: 10px;
     padding: 1rem;
-    margin: 0.5rem 0;
     font-size: 1rem;
-    line-height: 1.8;
     color: #333;
+}
+
+.earnings-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #2e8b57;
+    margin-bottom: 0.3rem;
+    text-align: center;
+}
+
+.earnings-content {
+    line-height: 1.8;
+}
+
+.earnings-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.earnings-table td {
+    padding: 0.3rem 0.5rem;
+}
+
+.earnings-table td:last-child {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.earnings-table .total-row {
+    border-top: 2px solid #2e8b57;
+    margin-top: 0.5rem;
+}
+
+.earnings-table .total-row td {
+    padding-top: 0.5rem;
 }
 
 .earning-positive {
@@ -184,8 +230,75 @@ canvas {
 
 .earning-total {
     color: #2e8b57;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: bold;
+}
+
+.store {
+    flex: 1;
+    background: rgba(39, 62, 154, 0.1);
+    border: 2px solid #273e9a;
+    border-radius: 10px;
+    padding: 1rem;
+    font-size: 1rem;
+}
+
+.store-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #273e9a;
+    margin-bottom: 0.3rem;
+    text-align: center;
+}
+
+.store-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.5rem;
+}
+
+.store-table td {
+    padding: 0.5rem;
+}
+
+.store-table td:first-child {
+    font-weight: bold;
+}
+
+.store-table td:nth-child(2) {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.store-table td:last-child {
+    text-align: right;
+}
+
+.item-price {
+    color: #2e8b57;
+    font-weight: bold;
+}
+
+.buy-btn {
+    background-color: #2e8b57;
+    color: white;
+    border: none;
+    padding: 0.4rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    pointer-events: auto;
+}
+
+.buy-btn:hover:not(:disabled) {
+    background-color: #3da869;
+}
+
+.buy-btn:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 @media (max-width: 768px) {
@@ -196,5 +309,13 @@ canvas {
     .ui-controls #roll-btn {
         font-size: 0.9rem;
         padding: 0.8em 1.2em;
+    }
+    
+    .round-summary {
+        flex-direction: column;
+    }
+    
+    .earnings-details, .store {
+        width: 100%;
     }
 }
