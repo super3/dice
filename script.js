@@ -22,7 +22,8 @@ const gameState = {
     diceScores: [],
     lockedDice: new Set(),
     canRoll: true,
-    roundComplete: false
+    roundComplete: false,
+    hasRolled: false  // Track if dice have been rolled yet
 };
 
 // Target scores for each round (gets progressively harder)
@@ -89,7 +90,7 @@ function initScene() {
 
     // Initialize game
     updateUI();
-    throwDice();
+    // Don't throw dice on page load
 
     render();
 }
@@ -153,6 +154,12 @@ function createDice(index) {
         shape: new CANNON.Box(new CANNON.Vec3(.5, .5, .5)),
         sleepTimeLimit: .1
     });
+    
+    // Set initial position for dice (centered, at rest)
+    const startX = (index - (params.numberOfDice - 1) / 2) * 2;
+    body.position.set(startX, 0, 0);
+    mesh.position.copy(body.position);
+    
     physicsWorld.addBody(body);
 
     return {mesh, body, index};
@@ -259,6 +266,11 @@ function createInnerGeometry() {
 
 function addDiceEvents(dice, index) {
     dice.body.addEventListener('sleep', (e) => {
+        
+        // Don't calculate score if dice haven't been rolled yet
+        if (!gameState.hasRolled) {
+            return;
+        }
 
         dice.body.allowSleep = false;
 
@@ -325,9 +337,14 @@ function checkRoundComplete() {
     } else if (gameState.rerollsRemaining === 0) {
         // Game over
         gameState.canRoll = false;
-        rollBtn.textContent = 'Game Over!';
-        rollBtn.disabled = true;
+        rollBtn.textContent = 'New Game';
+        rollBtn.disabled = false;
+        rollBtn.classList.add('game-over');
         scoreResult.style.color = '#d45f2e';
+        
+        // Change roll button click handler to restart game
+        rollBtn.removeEventListener('click', handleRoll);
+        rollBtn.addEventListener('click', restartGame);
     }
 }
 
@@ -363,6 +380,50 @@ function nextRound() {
     
     updateUI();
     throwDice();
+}
+
+function restartGame() {
+    // Reset game state to round 1
+    gameState.round = 1;
+    gameState.targetScore = roundTargets[0];
+    gameState.rerollsRemaining = 3;
+    gameState.currentScore = 0;
+    gameState.diceScores = [];
+    gameState.lockedDice.clear();
+    gameState.canRoll = true;
+    gameState.roundComplete = false;
+    gameState.hasRolled = false;  // Reset hasRolled flag
+    
+    // Reset UI
+    rollBtn.classList.remove('game-over');
+    rollBtn.textContent = 'Roll Dice';
+    rollBtn.disabled = false;
+    scoreResult.style.color = '#d45f2e';
+    
+    // Restore original click handler
+    rollBtn.removeEventListener('click', restartGame);
+    rollBtn.addEventListener('click', handleRoll);
+    
+    // Reset dice to starting positions without rolling
+    diceArray.forEach((dice, index) => {
+        updateDiceAppearance(dice, false);
+        
+        // Reset dice to starting position exactly like initial creation
+        const startX = (index - (params.numberOfDice - 1) / 2) * 2;
+        dice.body.velocity.setZero();
+        dice.body.angularVelocity.setZero();
+        dice.body.position.set(startX, 0, 0);
+        dice.body.quaternion.set(0, 0, 0, 1);
+        dice.mesh.position.copy(dice.body.position);
+        dice.mesh.quaternion.copy(dice.body.quaternion);
+        
+        // Wake up the body so it falls naturally
+        dice.body.wakeUp();
+        dice.body.allowSleep = true;
+    });
+    
+    updateUI();
+    // Don't throw dice on restart
 }
 
 function updateUI() {
@@ -456,8 +517,9 @@ function updateSceneSize() {
 }
 
 function throwDice() {
+    gameState.hasRolled = true;  // Mark that dice have been rolled
     gameState.diceScores = [];
-    scoreResult.textContent = '';
+    scoreResult.textContent = '0';
 
     diceArray.forEach((d, dIdx) => {
         // Only roll dice that aren't locked

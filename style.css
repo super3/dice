@@ -158,6 +158,14 @@ canvas {
     background-color: #999;
 }
 
+.ui-controls #roll-btn.game-over {
+    background-color: #d32f2f;
+}
+
+.ui-controls #roll-btn.game-over:hover {
+    background-color: #f44336;
+}
+
 @media (max-width: 768px) {
     .score {
         font-size: 1rem;
