@@ -5,8 +5,28 @@ import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
 const canvasEl = document.querySelector('#canvas');
 const scoreResult = document.querySelector('#score-result');
 const rollBtn = document.querySelector('#roll-btn');
+const nextRoundBtn = document.querySelector('#next-round-btn');
+const roundNumber = document.querySelector('#round-number');
+const targetScore = document.querySelector('#target-score');
+const rerollsLeft = document.querySelector('#rerolls-left');
 
 let renderer, scene, camera, diceMesh, physicsWorld;
+let raycaster, mouse;
+
+// Game state
+const gameState = {
+    round: 1,
+    targetScore: 7,
+    currentScore: 0,
+    rerollsRemaining: 3,
+    diceScores: [],
+    lockedDice: new Set(),
+    canRoll: true,
+    roundComplete: false
+};
+
+// Target scores for each round (gets progressively harder)
+const roundTargets = [7, 12, 18, 25, 33, 42, 52, 63, 75, 88];
 
 const params = {
     numberOfDice: 2,
@@ -22,8 +42,11 @@ initPhysics();
 initScene();
 
 window.addEventListener('resize', updateSceneSize);
-window.addEventListener('dblclick', throwDice);
-rollBtn.addEventListener('click', throwDice);
+window.addEventListener('dblclick', handleRoll);
+rollBtn.addEventListener('click', handleRoll);
+nextRoundBtn.addEventListener('click', nextRound);
+canvasEl.addEventListener('click', handleDiceClick);
+canvasEl.addEventListener('mousemove', handleMouseMove);
 
 function initScene() {
 
@@ -39,6 +62,10 @@ function initScene() {
 
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, .1, 300)
     camera.position.set(0, .5, 4).multiplyScalar(5);
+
+    // Initialize raycaster for mouse picking
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
 
     updateSceneSize();
 
@@ -56,10 +83,12 @@ function initScene() {
     createFloor();
     diceMesh = createDiceMesh();
     for (let i = 0; i < params.numberOfDice; i++) {
-        diceArray.push(createDice());
-        addDiceEvents(diceArray[i]);
+        diceArray.push(createDice(i));
+        addDiceEvents(diceArray[i], i);
     }
 
+    // Initialize game
+    updateUI();
     throwDice();
 
     render();
@@ -72,7 +101,6 @@ function initPhysics() {
     })
     physicsWorld.defaultContactMaterial.restitution = .3;
 }
-
 
 function createFloor() {
     const floor = new THREE.Mesh(
@@ -115,8 +143,9 @@ function createDiceMesh() {
     return diceMesh;
 }
 
-function createDice() {
+function createDice(index) {
     const mesh = diceMesh.clone();
+    mesh.userData.diceIndex = index;
     scene.add(mesh);
 
     const body = new CANNON.Body({
@@ -126,7 +155,7 @@ function createDice() {
     });
     physicsWorld.addBody(body);
 
-    return {mesh, body};
+    return {mesh, body, index};
 }
 
 function createBoxGeometry() {
@@ -228,7 +257,7 @@ function createInnerGeometry() {
     ], false);
 }
 
-function addDiceEvents(dice) {
+function addDiceEvents(dice, index) {
     dice.body.addEventListener('sleep', (e) => {
 
         dice.body.allowSleep = false;
@@ -242,36 +271,169 @@ function addDiceEvents(dice) {
         let isMinusHalfPi = (angle) => Math.abs(.5 * Math.PI + angle) < eps;
         let isPiOrMinusPi = (angle) => (Math.abs(Math.PI - angle) < eps || Math.abs(Math.PI + angle) < eps);
 
-
+        let score = 0;
         if (isZero(euler.z)) {
             if (isZero(euler.x)) {
-                showRollResults(1);
+                score = 1;
             } else if (isHalfPi(euler.x)) {
-                showRollResults(4);
+                score = 4;
             } else if (isMinusHalfPi(euler.x)) {
-                showRollResults(3);
+                score = 3;
             } else if (isPiOrMinusPi(euler.x)) {
-                showRollResults(6);
+                score = 6;
             } else {
                 // landed on edge => wait to fall on side and fire the event again
                 dice.body.allowSleep = true;
+                return;
             }
         } else if (isHalfPi(euler.z)) {
-            showRollResults(2);
+            score = 2;
         } else if (isMinusHalfPi(euler.z)) {
-            showRollResults(5);
+            score = 5;
         } else {
             // landed on edge => wait to fall on side and fire the event again
             dice.body.allowSleep = true;
+            return;
         }
+
+        gameState.diceScores[index] = score;
+        updateScore();
     });
 }
 
-function showRollResults(score) {
-    if (scoreResult.innerHTML === '') {
-        scoreResult.innerHTML += score;
+function updateScore() {
+    const total = gameState.diceScores.reduce((sum, score) => sum + (score || 0), 0);
+    gameState.currentScore = total;
+    scoreResult.textContent = total;
+    
+    // Check if round is complete
+    if (gameState.diceScores.filter(s => s !== undefined).length === params.numberOfDice) {
+        checkRoundComplete();
+    }
+}
+
+function checkRoundComplete() {
+    if (gameState.currentScore >= gameState.targetScore) {
+        // Round won!
+        gameState.roundComplete = true;
+        rollBtn.style.display = 'none';
+        nextRoundBtn.style.display = 'block';
+        gameState.canRoll = false;
+        
+        // Visual feedback for winning
+        scoreResult.style.color = '#2e8b57';
+    } else if (gameState.rerollsRemaining === 0) {
+        // Game over
+        gameState.canRoll = false;
+        rollBtn.textContent = 'Game Over!';
+        rollBtn.disabled = true;
+        scoreResult.style.color = '#d45f2e';
+    }
+}
+
+function handleRoll() {
+    if (!gameState.canRoll || gameState.rerollsRemaining <= 0) return;
+    
+    gameState.rerollsRemaining--;
+    updateUI();
+    throwDice();
+}
+
+function nextRound() {
+    gameState.round++;
+    gameState.targetScore = roundTargets[Math.min(gameState.round - 1, roundTargets.length - 1)];
+    gameState.rerollsRemaining = 3;
+    gameState.currentScore = 0;
+    gameState.diceScores = [];
+    gameState.lockedDice.clear();
+    gameState.canRoll = true;
+    gameState.roundComplete = false;
+    
+    // Reset UI
+    rollBtn.style.display = 'block';
+    nextRoundBtn.style.display = 'none';
+    rollBtn.disabled = false;
+    rollBtn.textContent = 'Roll Dice';
+    scoreResult.style.color = '#d45f2e';
+    
+    // Update dice visuals
+    diceArray.forEach(dice => {
+        updateDiceAppearance(dice, false);
+    });
+    
+    updateUI();
+    throwDice();
+}
+
+function updateUI() {
+    roundNumber.textContent = gameState.round;
+    targetScore.textContent = gameState.targetScore;
+    rerollsLeft.textContent = gameState.rerollsRemaining;
+    scoreResult.textContent = gameState.currentScore;
+    
+    if (gameState.rerollsRemaining === 0 && !gameState.roundComplete) {
+        rollBtn.disabled = true;
+    }
+}
+
+function handleMouseMove(event) {
+    const rect = canvasEl.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+}
+
+function handleDiceClick(event) {
+    const rect = canvasEl.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    
+    const intersects = raycaster.intersectObjects(scene.children, true);
+    
+    if (intersects.length > 0) {
+        // Find the dice that was clicked
+        let clickedDice = null;
+        for (let intersect of intersects) {
+            let obj = intersect.object;
+            while (obj.parent && !obj.userData.diceIndex !== undefined) {
+                if (obj.userData.diceIndex !== undefined) {
+                    clickedDice = diceArray[obj.userData.diceIndex];
+                    break;
+                }
+                obj = obj.parent;
+            }
+            if (clickedDice) break;
+        }
+        
+        if (clickedDice) {
+            toggleDiceLock(clickedDice);
+        }
+    }
+}
+
+function toggleDiceLock(dice) {
+    if (gameState.lockedDice.has(dice.index)) {
+        gameState.lockedDice.delete(dice.index);
+        updateDiceAppearance(dice, false);
     } else {
-        scoreResult.innerHTML += ('+' + score);
+        gameState.lockedDice.add(dice.index);
+        updateDiceAppearance(dice, true);
+    }
+}
+
+function updateDiceAppearance(dice, locked) {
+    const outerMesh = dice.mesh.children.find(child => child.material && child.material.color);
+    if (outerMesh) {
+        if (locked) {
+            outerMesh.material.color.setHex(0x90ee90); // Light green for locked
+            outerMesh.material.emissive = new THREE.Color(0x4caf50);
+            outerMesh.material.emissiveIntensity = 0.2;
+        } else {
+            outerMesh.material.color.setHex(0xeeeeee); // Normal white
+            outerMesh.material.emissive = new THREE.Color(0x000000);
+            outerMesh.material.emissiveIntensity = 0;
+        }
     }
 }
 
@@ -294,25 +456,28 @@ function updateSceneSize() {
 }
 
 function throwDice() {
-    scoreResult.innerHTML = '';
+    gameState.diceScores = [];
+    scoreResult.textContent = '';
 
     diceArray.forEach((d, dIdx) => {
+        // Only roll dice that aren't locked
+        if (!gameState.lockedDice.has(dIdx)) {
+            d.body.velocity.setZero();
+            d.body.angularVelocity.setZero();
 
-        d.body.velocity.setZero();
-        d.body.angularVelocity.setZero();
+            d.body.position = new CANNON.Vec3(6, dIdx * 1.5 + 3, 0);
+            d.mesh.position.copy(d.body.position);
 
-        d.body.position = new CANNON.Vec3(6, dIdx * 1.5 + 3, 0);
-        d.mesh.position.copy(d.body.position);
+            d.mesh.rotation.set(2 * Math.PI * Math.random(), 0, 2 * Math.PI * Math.random())
+            d.body.quaternion.copy(d.mesh.quaternion);
 
-        d.mesh.rotation.set(2 * Math.PI * Math.random(), 0, 2 * Math.PI * Math.random())
-        d.body.quaternion.copy(d.mesh.quaternion);
+            const force = 3 + 5 * Math.random();
+            d.body.applyImpulse(
+                new CANNON.Vec3(-force, force, 0),
+                new CANNON.Vec3(0, 0, .2)
+            );
 
-        const force = 3 + 5 * Math.random();
-        d.body.applyImpulse(
-            new CANNON.Vec3(-force, force, 0),
-            new CANNON.Vec3(0, 0, .2)
-        );
-
-        d.body.allowSleep = true;
+            d.body.allowSleep = true;
+        }
     });
 }
