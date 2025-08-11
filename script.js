@@ -9,6 +9,7 @@ const nextRoundBtn = document.querySelector('#next-round-btn');
 const roundNumber = document.querySelector('#round-number');
 const targetScore = document.querySelector('#target-score');
 const rerollsLeft = document.querySelector('#rerolls-left');
+const moneyAmount = document.querySelector('#money-amount');
 
 let renderer, scene, camera, diceMesh, physicsWorld;
 let raycaster, mouse;
@@ -24,7 +25,9 @@ const gameState = {
     lockedDice: new Set(),
     canRoll: true,
     roundComplete: false,
-    hasRolled: false  // Track if dice have been rolled yet
+    hasRolled: false,  // Track if dice have been rolled yet
+    money: 0,  // Player's money
+    lastEarnings: 0  // Track earnings from last round
 };
 
 // Target scores for each round (gets progressively harder)
@@ -362,6 +365,9 @@ function checkRoundComplete() {
         nextRoundBtn.style.display = 'block';
         gameState.canRoll = false;
         
+        // Calculate earnings
+        calculateEarnings();
+        
         // Visual feedback for winning
         scoreResult.style.color = '#2e8b57';
     } else if (gameState.rerollsRemaining === 0) {
@@ -376,6 +382,58 @@ function checkRoundComplete() {
         rollBtn.removeEventListener('click', handleRoll);
         rollBtn.addEventListener('click', restartGame);
     }
+}
+
+function calculateEarnings() {
+    let earnings = 0;
+    let bonusText = [];
+    
+    // Base earnings: difference between score and target
+    const baseEarnings = gameState.currentScore - gameState.targetScore;
+    earnings += baseEarnings;
+    
+    // Perfect roll bonus: exactly hit the target
+    if (gameState.currentScore === gameState.targetScore) {
+        earnings += 10;
+        bonusText.push('Perfect Roll: +$10');
+    }
+    
+    // Efficiency bonus: $2 per unused reroll
+    const unusedRerolls = gameState.rerollsRemaining;
+    if (unusedRerolls > 0) {
+        const efficiencyBonus = unusedRerolls * 2;
+        earnings += efficiencyBonus;
+        bonusText.push(`Efficiency Bonus (${unusedRerolls} rerolls): +$${efficiencyBonus}`);
+    }
+    
+    // Update money
+    gameState.lastEarnings = earnings;
+    gameState.money += earnings;
+    moneyAmount.textContent = `$${gameState.money}`;
+    
+    // Show earnings breakdown
+    showEarningsPopup(earnings, bonusText);
+}
+
+function showEarningsPopup(totalEarnings, bonuses) {
+    // Create earnings popup
+    const popup = document.createElement('div');
+    popup.className = 'earnings-popup';
+    
+    let bonusHtml = bonuses.length > 0 ? '<div class="bonus-text">' + bonuses.join('<br>') + '</div>' : '';
+    
+    popup.innerHTML = `
+        <div class="earnings-title">Round Complete!</div>
+        <div class="earnings-amount">+$${totalEarnings}</div>
+        ${bonusHtml}
+    `;
+    
+    document.body.appendChild(popup);
+    
+    // Remove popup after animation
+    setTimeout(() => {
+        popup.remove();
+    }, 3000);
 }
 
 function handleRoll() {
@@ -437,6 +495,8 @@ function restartGame() {
     gameState.canRoll = true;
     gameState.roundComplete = false;
     gameState.hasRolled = false;  // Reset hasRolled flag
+    gameState.money = 0;  // Reset money on game restart
+    gameState.lastEarnings = 0;
     
     // Reset UI
     rollBtn.classList.remove('game-over');
@@ -478,6 +538,7 @@ function updateUI() {
     targetScore.textContent = gameState.targetScore;
     rerollsLeft.textContent = gameState.rerollsRemaining;
     scoreResult.textContent = gameState.currentScore;
+    moneyAmount.textContent = `$${gameState.money}`;
     
     if (gameState.rerollsRemaining === 0 && !gameState.roundComplete) {
         rollBtn.disabled = true;

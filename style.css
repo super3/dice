@@ -63,33 +63,38 @@ canvas {
 
 .game-info {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 3.5rem;
     width: 100%;
-    margin-bottom: 1rem;
-    padding: 0 1rem;
+    margin-bottom: 1.5rem;
 }
 
-.round, .target {
+.round, .target, .money {
     font-weight: bold;
-    font-size: 1.1rem;
+    font-size: 1.3rem;
 }
 
 .round span, .target span {
     color: #273e9a;
 }
 
+.money span {
+    color: #2e8b57;
+    font-weight: bold;
+}
+
 .score {
     font-weight: bold;
-    font-size: 1.4rem;
+    font-size: 1.8rem;
     text-align: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
     width: 100%;
 }
 
 .rerolls {
     text-align: center;
-    font-size: 1rem;
-    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    margin-bottom: 1.2rem;
     width: 100%;
 }
 
@@ -100,20 +105,14 @@ canvas {
 
 .instructions {
     text-align: center;
-    font-size: 0.85rem;
+    font-size: 1rem;
     color: #666;
-    margin-bottom: 1rem;
+    margin-bottom: 1.2rem;
     width: 100%;
 }
 
 .ui-controls #score-result {
-    display: inline-block;
-    min-width: 1.8em;
     color: #d45f2e;
-}
-
-.ui-controls #score-result:after {
-    content: "\200b";
 }
 
 .ui-controls #roll-btn, .ui-controls #next-round-btn {
@@ -129,7 +128,7 @@ canvas {
     margin: 0 auto 0.5rem;
     transition: background-color 0.2s, transform 0.1s;
     pointer-events: auto;
-    font-size: 1rem;
+    font-size: 1.15rem;
 }
 
 .ui-controls #next-round-btn {
@@ -166,6 +165,52 @@ canvas {
     background-color: #f44336;
 }
 
+.earnings-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 3px solid #2e8b57;
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 2000;
+    animation: popupAppear 0.3s ease-out;
+}
+
+@keyframes popupAppear {
+    from {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
+
+.earnings-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #273e9a;
+    margin-bottom: 1rem;
+}
+
+.earnings-amount {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #2e8b57;
+    margin-bottom: 1rem;
+}
+
+.bonus-text {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.5;
+}
+
 @media (max-width: 768px) {
     .score {
         font-size: 1rem;
@@ -174,5 +219,14 @@ canvas {
     .ui-controls #roll-btn {
         font-size: 0.9rem;
         padding: 0.8em 1.2em;
+    }
+    
+    .earnings-popup {
+        padding: 1.5rem;
+        width: 80%;
+    }
+    
+    .earnings-amount {
+        font-size: 2rem;
     }
 }
