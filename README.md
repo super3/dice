@@ -1,5 +1,8 @@
 # 3D Dice Roguelike
 
+![Deploy Frontend](https://github.com/super3/dice/actions/workflows/frontend.yml/badge.svg)
+![Tests](https://github.com/super3/dice/actions/workflows/test.yml/badge.svg)
+
 A browser-based roguelike dice game with 3D physics and strategic gameplay. Built with Three.js and Cannon-ES physics engine.
 
 🎮 **[Play the game here](https://super3.github.io/dice/)**
@@ -55,21 +58,46 @@ npm run dev
 # Server will open automatically at http://localhost:8000
 ```
 
+### Testing
+```bash
+# Run tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+```
+
 ### Technologies
 - **Three.js** - 3D graphics and rendering
 - **Cannon-ES** - Physics simulation
 - **ES6 Modules** - Modern JavaScript modules
+- **Jest** - Testing framework
 - **GitHub Pages** - Deployment
 
 ### Project Structure
 ```
-├── index.html       # Main HTML file
-├── script.js        # Game logic and physics
-├── style.css        # UI styling
+├── index.html           # Main HTML file
+├── script.js            # Game logic and physics
+├── style.css            # UI styling
+├── src/
+│   └── gameLogic.js     # Extracted game logic for testing
+├── tests/
+│   ├── gameLogic.test.js  # Unit tests
+│   └── __mocks__/       # Test mocks for Three.js and Cannon
 └── .github/
     └── workflows/
-        └── deploy.yml  # GitHub Pages deployment
+        ├── frontend.yml # GitHub Pages deployment
+        └── test.yml     # CI testing workflow
 ```
+
+## Credits
+
+The 3D dice rolling physics implementation is based on the excellent tutorial by [uuuulala](https://github.com/uuuulala):
+- **Original Tutorial**: [Three.js Rolling Dice Tutorial](https://github.com/uuuulala/Threejs-rolling-dice-tutorial/)
+- The dice geometry, physics setup, and core rolling mechanics are adapted from this tutorial
 
 ## Contributing
 Feel free to open issues or submit pull requests with improvements!

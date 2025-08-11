@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy Frontend
 
 on:
   push:
@@ -32,6 +32,6 @@ jobs:
         with:
           path: '.'
           
-      - name: Deploy to GitHub Pages
+      - name: Deploy Frontend to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
