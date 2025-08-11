@@ -24,7 +24,9 @@ const gameState = {
     lockedDice: new Set(),
     canRoll: true,
     roundComplete: false,
-    hasRolled: false  // Track if dice have been rolled yet
+    hasRolled: false,  // Track if dice have been rolled yet
+    isRolling: false,  // Track if dice are currently rolling
+    tiltEnabled: false  // Track if device tilt is enabled
 };
 
 // Target scores for each round (gets progressively harder)
@@ -42,6 +44,7 @@ const diceArray = [];
 
 initPhysics();
 initScene();
+initAccelerometer();
 
 window.addEventListener('resize', updateSceneSize);
 window.addEventListener('dblclick', handleRoll);
@@ -350,6 +353,7 @@ function updateScore() {
     
     // Check if all expected dice have scores (locked dice keep their old scores)
     if (settledUnlockedDice >= unlockedDiceCount) {
+        gameState.isRolling = false;  // Dice have settled
         checkRoundComplete();
     }
 }
@@ -589,6 +593,7 @@ function updateSceneSize() {
 
 function throwDice() {
     gameState.hasRolled = true;  // Mark that dice have been rolled
+    gameState.isRolling = true;  // Mark that dice are rolling
     
     // Keep scores for locked dice
     const oldScores = [...gameState.diceScores];
@@ -622,4 +627,99 @@ function throwDice() {
             d.body.allowSleep = true;
         }
     });
+}
+
+function initAccelerometer() {
+    // Check if device motion is available
+    if (window.DeviceMotionEvent) {
+        // For iOS 13+ we need to request permission
+        if (typeof DeviceMotionEvent.requestPermission === 'function') {
+            // Add a button or wait for user interaction to request permission
+            const requestPermission = () => {
+                DeviceMotionEvent.requestPermission()
+                    .then(response => {
+                        if (response === 'granted') {
+                            startAccelerometer();
+                        }
+                    })
+                    .catch(console.error);
+            };
+            
+            // Request on first touch/click for iOS
+            window.addEventListener('touchend', requestPermission, { once: true });
+            window.addEventListener('click', requestPermission, { once: true });
+        } else {
+            // Non-iOS devices
+            startAccelerometer();
+        }
+    }
+}
+
+function startAccelerometer() {
+    gameState.tiltEnabled = true;
+    
+    window.addEventListener('devicemotion', (event) => {
+        if (!gameState.isRolling && gameState.hasRolled) {
+            // Get accelerometer data (includes gravity)
+            const accel = event.accelerationIncludingGravity;
+            
+            if (accel) {
+                // Apply tilt forces to all unlocked dice
+                const tiltForce = 0.5; // Adjust sensitivity
+                
+                diceArray.forEach((dice, idx) => {
+                    if (!gameState.lockedDice.has(idx)) {
+                        // Apply force based on device tilt
+                        // X-axis: left/right tilt
+                        // Y-axis: forward/backward tilt
+                        const force = new CANNON.Vec3(
+                            -accel.x * tiltForce,
+                            0,
+                            accel.y * tiltForce
+                        );
+                        
+                        dice.body.applyForce(force, dice.body.position);
+                        
+                        // Wake up the body if it's sleeping
+                        if (dice.body.sleepState === CANNON.Body.SLEEPING) {
+                            dice.body.wakeUp();
+                        }
+                    }
+                });
+            }
+        }
+    });
+    
+    // Add visual indicator that tilt is active
+    addTiltIndicator();
+}
+
+function addTiltIndicator() {
+    // Create a small indicator in the UI
+    const indicator = document.createElement('div');
+    indicator.id = 'tilt-indicator';
+    indicator.innerHTML = '📱 Tilt enabled';
+    indicator.style.cssText = `
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: rgba(39, 62, 154, 0.8);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        z-index: 1000;
+        display: none;
+    `;
+    document.body.appendChild(indicator);
+    
+    // Show indicator when tilt is active
+    setTimeout(() => {
+        if (gameState.tiltEnabled) {
+            indicator.style.display = 'block';
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 3000);
+        }
+    }, 1000);
 }
