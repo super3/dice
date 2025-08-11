@@ -1,13 +1,32 @@
-# 3D Dice Roguelike
+<h1 align="center">
+  3D Dice Roguelike
+  <br>
+</h1>
 
-![Deploy Frontend](https://github.com/super3/dice/actions/workflows/frontend.yml/badge.svg)
-![Tests](https://github.com/super3/dice/actions/workflows/test.yml/badge.svg)
+<h4 align="center">A browser-based roguelike dice game with 3D physics built with <a href="https://threejs.org">Three.js</a>, <a href="https://pmndrs.github.io/cannon-es/">Cannon-ES</a>, and <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript">JavaScript</a>.</h4>
 
-A browser-based roguelike dice game with 3D physics and strategic gameplay. Built with Three.js and Cannon-ES physics engine.
+<div align="center">
 
-🎮 **[Play the game here](https://super3.github.io/dice/)**
+[![Frontend Build Status](https://img.shields.io/github/actions/workflow/status/super3/dice/frontend.yml?label=frontend)](https://github.com/super3/dice/actions/workflows/frontend.yml)
+[![Test Status](https://img.shields.io/github/actions/workflow/status/super3/dice/test.yml?label=tests)](https://github.com/super3/dice/actions/workflows/test.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?label=license)](https://github.com/super3/dice/blob/main/LICENSE)
 
-## How to Play
+</div>
+
+<p align="center">
+  <a href="https://super3.github.io/dice/">🎮 Play the game here</a>
+</p>
+
+## Quick Start
+```bash
+git clone https://github.com/super3/dice.git && cd dice
+npm install && npm test
+npm start
+```
+
+Open `http://localhost:8000` in your browser to start playing.
+
+## 🎲 How to Play
 
 ### Objective
 Roll dice to meet or exceed target scores across increasingly difficult rounds. Earn money based on your performance and spend it on additional dice to improve your chances.
@@ -41,7 +60,7 @@ Between rounds, spend your earnings on:
 - Save rerolls when possible for efficiency bonuses
 - Buy additional dice to make higher targets achievable
 
-## Development
+## 🚀 Development
 
 ### Local Setup
 ```bash
@@ -93,14 +112,11 @@ npm run test:coverage
         └── test.yml     # CI testing workflow
 ```
 
-## Credits
+## 📜 Credits
 
 The 3D dice rolling physics implementation is based on the excellent tutorial by [uuuulala](https://github.com/uuuulala):
 - **Original Tutorial**: [Three.js Rolling Dice Tutorial](https://github.com/uuuulala/Threejs-rolling-dice-tutorial/)
 - The dice geometry, physics setup, and core rolling mechanics are adapted from this tutorial
 
-## Contributing
-Feel free to open issues or submit pull requests with improvements!
-
-## License
+## 📄 License
 MIT
