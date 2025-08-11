@@ -33,7 +33,8 @@ const gameState = {
     money: 0,  // Player's money
     lastEarnings: 0,  // Track earnings from last round
     diceBaseCost: 10,  // Base cost for dice
-    dicePurchased: 0  // Track number of dice purchased
+    dicePurchased: 0,  // Track number of dice purchased
+    diceRolling: false  // Track if dice are currently rolling
 };
 
 // Target scores for each round (gets progressively harder)
@@ -367,6 +368,8 @@ function updateScore() {
     
     // Check if all expected dice have scores (locked dice keep their old scores)
     if (settledUnlockedDice >= unlockedDiceCount) {
+        gameState.diceRolling = false;  // Dice have settled
+        updateUI();  // Re-enable button if appropriate
         checkRoundComplete();
     }
 }
@@ -444,9 +447,10 @@ function calculateEarnings() {
 
 
 function handleRoll() {
-    if (!gameState.canRoll || gameState.rerollsRemaining <= 0) return;
+    if (!gameState.canRoll || gameState.rerollsRemaining <= 0 || gameState.diceRolling) return;
     
     gameState.rerollsRemaining--;
+    gameState.diceRolling = true;
     updateUI();
     throwDice();
 }
@@ -460,6 +464,7 @@ function nextRound() {
     gameState.lockedDice.clear();
     gameState.canRoll = true;
     gameState.roundComplete = false;
+    gameState.diceRolling = false;
     
     // Reset UI
     rollBtn.style.display = 'block';
@@ -508,6 +513,7 @@ function restartGame() {
     gameState.money = 0;  // Reset money on game restart
     gameState.lastEarnings = 0;
     gameState.dicePurchased = 0;  // Reset dice purchases
+    gameState.diceRolling = false;  // Reset rolling flag
     
     // Remove extra dice if any were purchased
     while (params.numberOfDice > 2) {
@@ -566,8 +572,13 @@ function updateUI() {
     scoreResult.textContent = gameState.currentScore;
     moneyAmount.textContent = `$${gameState.money}`;
     
-    if (gameState.rerollsRemaining === 0 && !gameState.roundComplete) {
+    // Disable button if: no rerolls left, dice are rolling, or can't roll
+    if ((gameState.rerollsRemaining === 0 && !gameState.roundComplete) || 
+        gameState.diceRolling || 
+        !gameState.canRoll) {
         rollBtn.disabled = true;
+    } else {
+        rollBtn.disabled = false;
     }
 }
 

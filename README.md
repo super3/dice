@@ -1,5 +1,5 @@
 <h1 align="center">
-  3D Dice Roguelike
+  Dice
   <br>
 </h1>
 
