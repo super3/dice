@@ -117,6 +117,3 @@ npm run test:coverage
 The 3D dice rolling physics implementation is based on the excellent tutorial by [uuuulala](https://github.com/uuuulala):
 - **Original Tutorial**: [Three.js Rolling Dice Tutorial](https://github.com/uuuulala/Threejs-rolling-dice-tutorial/)
 - The dice geometry, physics setup, and core rolling mechanics are adapted from this tutorial
-
-## 📄 License
-MIT
