@@ -14,6 +14,7 @@ const roundSummary = document.querySelector('#round-summary');
 const earningsContent = document.querySelector('#earnings-content');
 const buyDiceBtn = document.querySelector('#buy-dice-btn');
 const dicePrice = document.querySelector('#dice-price');
+const comboInfo = document.querySelector('#combo-info');
 
 let renderer, scene, camera, diceMesh, physicsWorld;
 let raycaster, mouse;
@@ -306,6 +307,79 @@ function createInnerGeometry() {
     ], false);
 }
 
+function calculateComboBonuses(scores) {
+    const bonuses = {
+        doubles: 0,
+        triples: 0,
+        quads: 0,
+        straight: 0,
+        fullHouse: 0,
+        total: 0,
+        descriptions: []
+    };
+    
+    // Filter out undefined scores (dice that haven't settled)
+    const validScores = scores.filter(s => s !== undefined);
+    if (validScores.length < 2) return bonuses;
+    
+    // Count occurrences of each value
+    const counts = {};
+    validScores.forEach(score => {
+        counts[score] = (counts[score] || 0) + 1;
+    });
+    
+    // Check for multiples
+    Object.entries(counts).forEach(([value, count]) => {
+        if (count === 2) {
+            bonuses.doubles += 3; // +3 points for doubles
+            bonuses.descriptions.push(`Pair of ${value}s (+3)`);
+        } else if (count === 3) {
+            bonuses.triples += 8; // +8 points for triples
+            bonuses.descriptions.push(`Three ${value}s (+8)`);
+        } else if (count === 4) {
+            bonuses.quads += 15; // +15 points for quads
+            bonuses.descriptions.push(`Four ${value}s (+15)`);
+        } else if (count >= 5) {
+            const bonus = 15 + (count - 4) * 10; // +15 for 4, +10 for each additional
+            bonuses.quads += bonus;
+            bonuses.descriptions.push(`${count}x ${value}s (+${bonus})`);
+        }
+    });
+    
+    // Check for full house (3 of one kind + 2 of another)
+    const countValues = Object.values(counts);
+    if (countValues.includes(3) && countValues.includes(2)) {
+        bonuses.fullHouse = 12;
+        bonuses.descriptions.push(`Full House (+12)`);
+    }
+    
+    // Check for straights (consecutive numbers)
+    const uniqueScores = [...new Set(validScores)].sort((a, b) => a - b);
+    let straightLength = 1;
+    let maxStraightLength = 1;
+    
+    for (let i = 1; i < uniqueScores.length; i++) {
+        if (uniqueScores[i] === uniqueScores[i-1] + 1) {
+            straightLength++;
+            maxStraightLength = Math.max(maxStraightLength, straightLength);
+        } else {
+            straightLength = 1;
+        }
+    }
+    
+    // Award points for straights of 3 or more
+    if (maxStraightLength >= 3) {
+        const straightBonus = (maxStraightLength - 2) * 5; // 5 points per dice in straight beyond 2
+        bonuses.straight = straightBonus;
+        bonuses.descriptions.push(`Straight of ${maxStraightLength} (+${straightBonus})`);
+    }
+    
+    // Calculate total
+    bonuses.total = bonuses.doubles + bonuses.triples + bonuses.quads + bonuses.straight + bonuses.fullHouse;
+    
+    return bonuses;
+}
+
 function addDiceEvents(dice, index) {
     dice.body.addEventListener('sleep', (e) => {
         
@@ -356,9 +430,35 @@ function addDiceEvents(dice, index) {
 }
 
 function updateScore() {
-    const total = gameState.diceScores.reduce((sum, score) => sum + (score || 0), 0);
+    // Calculate base score
+    const baseTotal = gameState.diceScores.reduce((sum, score) => sum + (score || 0), 0);
+    
+    // Only calculate combo bonuses if dice have been rolled
+    let total = baseTotal;
+    if (gameState.hasRolled) {
+        // Calculate combo bonuses
+        const comboBonuses = calculateComboBonuses(gameState.diceScores);
+        total = baseTotal + comboBonuses.total;
+        gameState.currentCombos = comboBonuses; // Store for earnings display
+        
+        // Display score with bonus if applicable
+        if (comboBonuses.total > 0) {
+            scoreResult.textContent = `${total} (${baseTotal}+${comboBonuses.total})`;
+            // Show combo info
+            comboInfo.style.display = 'block';
+            comboInfo.innerHTML = comboBonuses.descriptions.join(' • ');
+        } else {
+            scoreResult.textContent = total;
+            comboInfo.style.display = 'none';
+        }
+    } else {
+        // No combos before first roll
+        scoreResult.textContent = total;
+        comboInfo.style.display = 'none';
+        gameState.currentCombos = null;
+    }
+    
     gameState.currentScore = total;
-    scoreResult.textContent = total;
     
     // Check if all unlocked dice have settled
     const unlockedDiceCount = params.numberOfDice - gameState.lockedDice.size;
@@ -412,7 +512,7 @@ function calculateEarnings() {
     // Base earnings: difference between score and target
     const baseEarnings = gameState.currentScore - gameState.targetScore;
     earnings += baseEarnings;
-    detailsHtml += `<tr><td>Base (${gameState.currentScore} - ${gameState.targetScore})</td><td class="earning-positive">+$${baseEarnings}</td></tr>`;
+    detailsHtml += `<tr><td>Score Over Target (${gameState.currentScore} - ${gameState.targetScore})</td><td class="earning-positive">+$${baseEarnings}</td></tr>`;
     
     // Perfect roll bonus: exactly hit the target
     if (gameState.currentScore === gameState.targetScore) {
@@ -429,7 +529,7 @@ function calculateEarnings() {
     }
     
     // Total row
-    detailsHtml += `<tr class="total-row"><td><strong>Total</strong></td><td class="earning-total"><strong>+$${earnings}</strong></td></tr>`;
+    detailsHtml += `<tr class="total-row"><td><strong>Total Earnings</strong></td><td class="earning-total"><strong>+$${earnings}</strong></td></tr>`;
     detailsHtml += '</table>';
     
     // Update money
@@ -465,6 +565,8 @@ function nextRound() {
     gameState.canRoll = true;
     gameState.roundComplete = false;
     gameState.diceRolling = false;
+    gameState.currentCombos = null;
+    gameState.hasRolled = false;  // Reset hasRolled for new round
     
     // Reset UI
     rollBtn.style.display = 'block';
@@ -473,6 +575,7 @@ function nextRound() {
     rollBtn.textContent = 'Roll Dice';
     scoreResult.style.color = '#d45f2e';
     roundSummary.style.display = 'none';  // Hide round summary
+    comboInfo.style.display = 'none';  // Hide combo info
     
     // Update dice visuals and clear all locks
     diceArray.forEach((dice, index) => {
@@ -514,6 +617,7 @@ function restartGame() {
     gameState.lastEarnings = 0;
     gameState.dicePurchased = 0;  // Reset dice purchases
     gameState.diceRolling = false;  // Reset rolling flag
+    gameState.currentCombos = null;  // Reset combos
     
     // Remove extra dice if any were purchased
     while (params.numberOfDice > 2) {
@@ -535,6 +639,7 @@ function restartGame() {
     rollBtn.disabled = false;
     scoreResult.style.color = '#d45f2e';
     roundSummary.style.display = 'none';  // Hide round summary
+    comboInfo.style.display = 'none';  // Hide combo info
     
     // Restore original click handler
     rollBtn.removeEventListener('click', restartGame);
@@ -730,6 +835,10 @@ function buyDice() {
 }
 
 function repositionAllDice() {
+    // Temporarily disable hasRolled to prevent score calculation
+    const wasRolled = gameState.hasRolled;
+    gameState.hasRolled = false;
+    
     diceArray.forEach((dice, index) => {
         if (dice && dice.mesh) {
             const startX = (index - (params.numberOfDice - 1) / 2) * 2;
@@ -737,6 +846,11 @@ function repositionAllDice() {
             dice.mesh.position.x = startX;
         }
     });
+    
+    // Restore hasRolled state after repositioning
+    setTimeout(() => {
+        gameState.hasRolled = wasRolled;
+    }, 100);
 }
 
 function throwDice() {
