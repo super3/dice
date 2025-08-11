@@ -24,9 +24,7 @@ const gameState = {
     lockedDice: new Set(),
     canRoll: true,
     roundComplete: false,
-    hasRolled: false,  // Track if dice have been rolled yet
-    isRolling: false,  // Track if dice are currently rolling
-    tiltEnabled: false  // Track if device tilt is enabled
+    hasRolled: false  // Track if dice have been rolled yet
 };
 
 // Target scores for each round (gets progressively harder)
@@ -44,7 +42,6 @@ const diceArray = [];
 
 initPhysics();
 initScene();
-initAccelerometer();
 
 window.addEventListener('resize', updateSceneSize);
 window.addEventListener('dblclick', handleRoll);
@@ -94,7 +91,6 @@ function initScene() {
 
     // Initialize game
     updateUI();
-    gameState.isRolling = false;  // Ensure tilt works from start
     // Don't throw dice on page load
 
     render();
@@ -354,7 +350,6 @@ function updateScore() {
     
     // Check if all expected dice have scores (locked dice keep their old scores)
     if (settledUnlockedDice >= unlockedDiceCount) {
-        gameState.isRolling = false;  // Dice have settled
         checkRoundComplete();
     }
 }
@@ -594,7 +589,6 @@ function updateSceneSize() {
 
 function throwDice() {
     gameState.hasRolled = true;  // Mark that dice have been rolled
-    gameState.isRolling = true;  // Mark that dice are rolling
     
     // Keep scores for locked dice
     const oldScores = [...gameState.diceScores];
@@ -628,111 +622,4 @@ function throwDice() {
             d.body.allowSleep = true;
         }
     });
-}
-
-function initAccelerometer() {
-    // Check if device motion is available
-    if (window.DeviceMotionEvent) {
-        // For iOS 13+ we need to request permission
-        if (typeof DeviceMotionEvent.requestPermission === 'function') {
-            // Add a button or wait for user interaction to request permission
-            const requestPermission = () => {
-                DeviceMotionEvent.requestPermission()
-                    .then(response => {
-                        if (response === 'granted') {
-                            startAccelerometer();
-                        }
-                    })
-                    .catch(console.error);
-            };
-            
-            // Request on first touch/click for iOS
-            window.addEventListener('touchend', requestPermission, { once: true });
-            window.addEventListener('click', requestPermission, { once: true });
-        } else {
-            // Non-iOS devices
-            startAccelerometer();
-        }
-    }
-}
-
-function startAccelerometer() {
-    gameState.tiltEnabled = true;
-    console.log('Accelerometer started');
-    
-    window.addEventListener('devicemotion', (event) => {
-        // Remove the hasRolled check - allow tilt anytime not rolling
-        if (!gameState.isRolling) {
-            // Get accelerometer data (includes gravity)
-            const accel = event.accelerationIncludingGravity;
-            
-            if (accel && accel.x !== null && accel.y !== null) {
-                // Debug log - remove after testing
-                if (Math.abs(accel.x) > 1 || Math.abs(accel.y) > 1) {
-                    console.log('Tilt detected:', accel.x, accel.y);
-                }
-                
-                // Apply tilt forces to all unlocked dice
-                const tiltForce = 2.0; // Increased sensitivity
-                
-                diceArray.forEach((dice, idx) => {
-                    if (!gameState.lockedDice.has(idx)) {
-                        // Apply force based on device tilt
-                        // X-axis: left/right tilt
-                        // Y-axis: forward/backward tilt
-                        const force = new CANNON.Vec3(
-                            -accel.x * tiltForce,
-                            0,
-                            accel.y * tiltForce
-                        );
-                        
-                        // Apply the force
-                        dice.body.applyForce(force, dice.body.position);
-                        
-                        // Wake up the body if it's sleeping
-                        dice.body.wakeUp();
-                        
-                        // Also add a small velocity to ensure movement
-                        if (Math.abs(accel.x) > 0.5 || Math.abs(accel.y) > 0.5) {
-                            dice.body.velocity.x += -accel.x * 0.1;
-                            dice.body.velocity.z += accel.y * 0.1;
-                        }
-                    }
-                });
-            }
-        }
-    });
-    
-    // Add visual indicator that tilt is active
-    addTiltIndicator();
-}
-
-function addTiltIndicator() {
-    // Create a small indicator in the UI
-    const indicator = document.createElement('div');
-    indicator.id = 'tilt-indicator';
-    indicator.innerHTML = '📱 Tilt enabled';
-    indicator.style.cssText = `
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        background: rgba(39, 62, 154, 0.8);
-        color: white;
-        padding: 5px 10px;
-        border-radius: 5px;
-        font-size: 12px;
-        z-index: 1000;
-        display: none;
-    `;
-    document.body.appendChild(indicator);
-    
-    // Show indicator when tilt is active
-    setTimeout(() => {
-        if (gameState.tiltEnabled) {
-            indicator.style.display = 'block';
-            setTimeout(() => {
-                indicator.style.display = 'none';
-            }, 3000);
-        }
-    }, 1000);
 }
