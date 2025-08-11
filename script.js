@@ -12,6 +12,7 @@ const rerollsLeft = document.querySelector('#rerolls-left');
 
 let renderer, scene, camera, diceMesh, physicsWorld;
 let raycaster, mouse;
+const lockSprites = [];
 
 // Game state
 const gameState = {
@@ -159,6 +160,29 @@ function createDice(index) {
     const startX = (index - (params.numberOfDice - 1) / 2) * 2;
     body.position.set(startX, 0, 0);
     mesh.position.copy(body.position);
+    
+    // Create lock sprite for this dice
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const context = canvas.getContext('2d');
+    context.font = 'bold 96px Arial';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText('🔒', 64, 64);
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMaterial = new THREE.SpriteMaterial({ 
+        map: texture,
+        transparent: true,
+        opacity: 0.9
+    });
+    const lockSprite = new THREE.Sprite(spriteMaterial);
+    lockSprite.scale.set(0.5, 0.5, 0.5);  // Make it smaller
+    lockSprite.visible = false;
+    lockSprite.raycast = () => {};  // Disable raycasting for the sprite
+    scene.add(lockSprite);
+    lockSprites[index] = lockSprite;
     
     physicsWorld.addBody(body);
 
@@ -318,8 +342,14 @@ function updateScore() {
     gameState.currentScore = total;
     scoreResult.textContent = total;
     
-    // Check if round is complete
-    if (gameState.diceScores.filter(s => s !== undefined).length === params.numberOfDice) {
+    // Check if all unlocked dice have settled
+    const unlockedDiceCount = params.numberOfDice - gameState.lockedDice.size;
+    const settledUnlockedDice = gameState.diceScores.filter((s, idx) => 
+        s !== undefined && !gameState.lockedDice.has(idx)
+    ).length;
+    
+    // Check if all expected dice have scores (locked dice keep their old scores)
+    if (settledUnlockedDice >= unlockedDiceCount) {
         checkRoundComplete();
     }
 }
@@ -373,13 +403,27 @@ function nextRound() {
     rollBtn.textContent = 'Roll Dice';
     scoreResult.style.color = '#d45f2e';
     
-    // Update dice visuals
-    diceArray.forEach(dice => {
+    // Update dice visuals and clear all locks
+    diceArray.forEach((dice, index) => {
         updateDiceAppearance(dice, false);
+        if (lockSprites[dice.index]) {
+            lockSprites[dice.index].visible = false;
+        }
+        
+        // Reset dice to starting position without rolling
+        const startX = (index - (params.numberOfDice - 1) / 2) * 2;
+        dice.body.velocity.setZero();
+        dice.body.angularVelocity.setZero();
+        dice.body.position.set(startX, 1, 0);
+        dice.body.quaternion.set(0, 0, 0, 1);
+        dice.mesh.position.copy(dice.body.position);
+        dice.mesh.quaternion.copy(dice.body.quaternion);
+        dice.body.wakeUp();
+        dice.body.allowSleep = true;
     });
     
     updateUI();
-    throwDice();
+    // Don't throw dice on next round
 }
 
 function restartGame() {
@@ -407,6 +451,9 @@ function restartGame() {
     // Reset dice to starting positions without rolling
     diceArray.forEach((dice, index) => {
         updateDiceAppearance(dice, false);
+        if (lockSprites[dice.index]) {
+            lockSprites[dice.index].visible = false;
+        }
         
         // Reset dice to starting position exactly like initial creation
         const startX = (index - (params.numberOfDice - 1) / 2) * 2;
@@ -484,12 +531,16 @@ function toggleDiceLock(dice) {
 }
 
 function updateDiceAppearance(dice, locked) {
+    // Show/hide lock sprite
+    if (lockSprites[dice.index]) {
+        lockSprites[dice.index].visible = locked;
+    }
+    
+    // Optional: still add subtle color change
     const outerMesh = dice.mesh.children.find(child => child.material && child.material.color);
     if (outerMesh) {
         if (locked) {
-            outerMesh.material.color.setHex(0x90ee90); // Light green for locked
-            outerMesh.material.emissive = new THREE.Color(0x4caf50);
-            outerMesh.material.emissiveIntensity = 0.2;
+            outerMesh.material.color.setHex(0xdddddd); // Slightly darker when locked
         } else {
             outerMesh.material.color.setHex(0xeeeeee); // Normal white
             outerMesh.material.emissive = new THREE.Color(0x000000);
@@ -504,6 +555,26 @@ function render() {
     for (const dice of diceArray) {
         dice.mesh.position.copy(dice.body.position)
         dice.mesh.quaternion.copy(dice.body.quaternion)
+        
+        // Update lock sprite position to face closest to camera
+        if (lockSprites[dice.index] && lockSprites[dice.index].visible) {
+            // Get dice position and camera direction
+            const dicePos = dice.body.position;
+            const cameraDir = new THREE.Vector3();
+            camera.getWorldDirection(cameraDir);
+            
+            // Position lock further from dice to avoid intersection
+            // when dice is rotated at an angle
+            const distance = 0.85; // Further out to clear rotated corners
+            lockSprites[dice.index].position.set(
+                dicePos.x - cameraDir.x * distance,
+                dicePos.y - cameraDir.y * distance,
+                dicePos.z - cameraDir.z * distance
+            );
+            
+            // Make sprite always face the camera
+            lockSprites[dice.index].lookAt(camera.position);
+        }
     }
 
     renderer.render(scene, camera);
@@ -518,8 +589,17 @@ function updateSceneSize() {
 
 function throwDice() {
     gameState.hasRolled = true;  // Mark that dice have been rolled
+    
+    // Keep scores for locked dice
+    const oldScores = [...gameState.diceScores];
     gameState.diceScores = [];
-    scoreResult.textContent = '0';
+    gameState.lockedDice.forEach(idx => {
+        if (oldScores[idx] !== undefined) {
+            gameState.diceScores[idx] = oldScores[idx];
+        }
+    });
+    
+    updateScore();  // Update score to show locked dice scores
 
     diceArray.forEach((d, dIdx) => {
         // Only roll dice that aren't locked
