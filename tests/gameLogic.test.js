@@ -111,8 +111,23 @@ describe('Game Logic Tests', () => {
       expect(calculateDiceScore(euler)).toBe(5);
     });
 
-    test('should return null for edge landing', () => {
+    test('should calculate score 4 for half pi rotation on x', () => {
+      const euler = { x: Math.PI / 2, y: 0, z: 0 };
+      expect(calculateDiceScore(euler)).toBe(4);
+    });
+
+    test('should calculate score 3 for minus half pi rotation on x', () => {
+      const euler = { x: -Math.PI / 2, y: 0, z: 0 };
+      expect(calculateDiceScore(euler)).toBe(3);
+    });
+
+    test('should return null for edge landing on x axis', () => {
       const euler = { x: Math.PI / 4, y: 0, z: 0 };
+      expect(calculateDiceScore(euler)).toBe(null);
+    });
+
+    test('should return null for edge landing on z axis', () => {
+      const euler = { x: 0, y: 0, z: Math.PI / 4 };
       expect(calculateDiceScore(euler)).toBe(null);
     });
   });
