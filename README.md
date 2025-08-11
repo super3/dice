@@ -46,11 +46,13 @@ Between rounds, spend your earnings on:
 git clone https://github.com/super3/dice.git
 cd dice
 
-# Start a local server
-python3 -m http.server 8000
+# Start the development server
+npm start
 
-# Open in browser
-# Navigate to http://localhost:8000
+# Or for development with cache disabled
+npm run dev
+
+# Server will open automatically at http://localhost:8000
 ```
 
 ### Technologies

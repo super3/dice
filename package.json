@@ -1,0 +1,28 @@
+{
+  "name": "3d-dice-roguelike",
+  "version": "1.0.0",
+  "description": "A browser-based roguelike dice game with 3D physics and strategic gameplay",
+  "main": "script.js",
+  "scripts": {
+    "start": "npx serve -p 8000",
+    "dev": "npx serve -p 8000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/super3/dice.git"
+  },
+  "keywords": [
+    "game",
+    "dice",
+    "roguelike",
+    "threejs",
+    "3d",
+    "physics"
+  ],
+  "author": "super3",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/super3/dice/issues"
+  },
+  "homepage": "https://super3.github.io/dice/"
+}
