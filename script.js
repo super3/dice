@@ -10,6 +10,7 @@ const roundNumber = document.querySelector('#round-number');
 const targetScore = document.querySelector('#target-score');
 const rerollsLeft = document.querySelector('#rerolls-left');
 const moneyAmount = document.querySelector('#money-amount');
+const earningsDetails = document.querySelector('#earnings-details');
 
 let renderer, scene, camera, diceMesh, physicsWorld;
 let raycaster, mouse;
@@ -386,16 +387,17 @@ function checkRoundComplete() {
 
 function calculateEarnings() {
     let earnings = 0;
-    let bonusText = [];
+    let detailsHtml = [];
     
     // Base earnings: difference between score and target
     const baseEarnings = gameState.currentScore - gameState.targetScore;
     earnings += baseEarnings;
+    detailsHtml.push(`Base earnings (${gameState.currentScore} - ${gameState.targetScore}): <span class="earning-positive">+$${baseEarnings}</span>`);
     
     // Perfect roll bonus: exactly hit the target
     if (gameState.currentScore === gameState.targetScore) {
         earnings += 10;
-        bonusText.push('Perfect Roll: +$10');
+        detailsHtml.push(`Perfect Roll Bonus: <span class="earning-positive">+$10</span>`);
     }
     
     // Efficiency bonus: $2 per unused reroll
@@ -403,7 +405,7 @@ function calculateEarnings() {
     if (unusedRerolls > 0) {
         const efficiencyBonus = unusedRerolls * 2;
         earnings += efficiencyBonus;
-        bonusText.push(`Efficiency Bonus (${unusedRerolls} rerolls): +$${efficiencyBonus}`);
+        detailsHtml.push(`Efficiency Bonus (${unusedRerolls} unused rerolls): <span class="earning-positive">+$${efficiencyBonus}</span>`);
     }
     
     // Update money
@@ -411,30 +413,15 @@ function calculateEarnings() {
     gameState.money += earnings;
     moneyAmount.textContent = `$${gameState.money}`;
     
+    // Show earnings in score result area
+    scoreResult.textContent = `${gameState.currentScore} (+$${earnings})`;
+    scoreResult.style.color = '#2e8b57';
+    
     // Show earnings breakdown
-    showEarningsPopup(earnings, bonusText);
+    earningsDetails.innerHTML = detailsHtml.join('<br>') + `<br><strong>Total Earned: <span class="earning-total">+$${earnings}</span></strong>`;
+    earningsDetails.style.display = 'block';
 }
 
-function showEarningsPopup(totalEarnings, bonuses) {
-    // Create earnings popup
-    const popup = document.createElement('div');
-    popup.className = 'earnings-popup';
-    
-    let bonusHtml = bonuses.length > 0 ? '<div class="bonus-text">' + bonuses.join('<br>') + '</div>' : '';
-    
-    popup.innerHTML = `
-        <div class="earnings-title">Round Complete!</div>
-        <div class="earnings-amount">+$${totalEarnings}</div>
-        ${bonusHtml}
-    `;
-    
-    document.body.appendChild(popup);
-    
-    // Remove popup after animation
-    setTimeout(() => {
-        popup.remove();
-    }, 3000);
-}
 
 function handleRoll() {
     if (!gameState.canRoll || gameState.rerollsRemaining <= 0) return;
@@ -460,6 +447,7 @@ function nextRound() {
     rollBtn.disabled = false;
     rollBtn.textContent = 'Roll Dice';
     scoreResult.style.color = '#d45f2e';
+    earningsDetails.style.display = 'none';  // Hide earnings details
     
     // Update dice visuals and clear all locks
     diceArray.forEach((dice, index) => {
@@ -503,6 +491,7 @@ function restartGame() {
     rollBtn.textContent = 'Roll Dice';
     rollBtn.disabled = false;
     scoreResult.style.color = '#d45f2e';
+    earningsDetails.style.display = 'none';  // Hide earnings details
     
     // Restore original click handler
     rollBtn.removeEventListener('click', restartGame);
