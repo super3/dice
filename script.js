@@ -94,6 +94,7 @@ function initScene() {
 
     // Initialize game
     updateUI();
+    gameState.isRolling = false;  // Ensure tilt works from start
     // Don't throw dice on page load
 
     render();
@@ -657,15 +658,22 @@ function initAccelerometer() {
 
 function startAccelerometer() {
     gameState.tiltEnabled = true;
+    console.log('Accelerometer started');
     
     window.addEventListener('devicemotion', (event) => {
-        if (!gameState.isRolling && gameState.hasRolled) {
+        // Remove the hasRolled check - allow tilt anytime not rolling
+        if (!gameState.isRolling) {
             // Get accelerometer data (includes gravity)
             const accel = event.accelerationIncludingGravity;
             
-            if (accel) {
+            if (accel && accel.x !== null && accel.y !== null) {
+                // Debug log - remove after testing
+                if (Math.abs(accel.x) > 1 || Math.abs(accel.y) > 1) {
+                    console.log('Tilt detected:', accel.x, accel.y);
+                }
+                
                 // Apply tilt forces to all unlocked dice
-                const tiltForce = 0.5; // Adjust sensitivity
+                const tiltForce = 2.0; // Increased sensitivity
                 
                 diceArray.forEach((dice, idx) => {
                     if (!gameState.lockedDice.has(idx)) {
@@ -678,11 +686,16 @@ function startAccelerometer() {
                             accel.y * tiltForce
                         );
                         
+                        // Apply the force
                         dice.body.applyForce(force, dice.body.position);
                         
                         // Wake up the body if it's sleeping
-                        if (dice.body.sleepState === CANNON.Body.SLEEPING) {
-                            dice.body.wakeUp();
+                        dice.body.wakeUp();
+                        
+                        // Also add a small velocity to ensure movement
+                        if (Math.abs(accel.x) > 0.5 || Math.abs(accel.y) > 0.5) {
+                            dice.body.velocity.x += -accel.x * 0.1;
+                            dice.body.velocity.z += accel.y * 0.1;
                         }
                     }
                 });
