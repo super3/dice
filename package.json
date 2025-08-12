@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/super3/dice.git"
+    "url": "git+https://github.com/super3/dicerun.io.git"
   },
   "keywords": [
     "game",
@@ -29,7 +29,7 @@
   "author": "super3",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/super3/dice/issues"
+    "url": "https://github.com/super3/dicerun.io/issues"
   },
   "homepage": "https://dicerun.io/"
 }
