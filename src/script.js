@@ -289,6 +289,50 @@ function createFloor() {
     floorBody.position.copy(floorMesh.position);
     floorBody.quaternion.copy(floorMesh.quaternion);
     physicsWorld.addBody(floorBody);
+    
+    // Add invisible walls to keep dice on screen (especially for mobile)
+    createInvisibleWalls();
+}
+
+function createInvisibleWalls() {
+    // Calculate wall positions based on camera view
+    // Adjust these values for mobile screens
+    const isMobile = window.innerWidth < 768;
+    const wallDistance = isMobile ? 8 : 15; // Closer walls on mobile
+    const wallHeight = 50; // Make walls tall enough
+    const wallThickness = 1;
+    
+    // Left wall
+    const leftWall = new CANNON.Body({
+        type: CANNON.Body.STATIC,
+        shape: new CANNON.Box(new CANNON.Vec3(wallThickness, wallHeight, wallDistance)),
+        position: new CANNON.Vec3(-wallDistance, 0, 0)
+    });
+    physicsWorld.addBody(leftWall);
+    
+    // Right wall
+    const rightWall = new CANNON.Body({
+        type: CANNON.Body.STATIC,
+        shape: new CANNON.Box(new CANNON.Vec3(wallThickness, wallHeight, wallDistance)),
+        position: new CANNON.Vec3(wallDistance, 0, 0)
+    });
+    physicsWorld.addBody(rightWall);
+    
+    // Front wall (closer to camera)
+    const frontWall = new CANNON.Body({
+        type: CANNON.Body.STATIC,
+        shape: new CANNON.Box(new CANNON.Vec3(wallDistance, wallHeight, wallThickness)),
+        position: new CANNON.Vec3(0, 0, 10)
+    });
+    physicsWorld.addBody(frontWall);
+    
+    // Back wall (further from camera)
+    const backWall = new CANNON.Body({
+        type: CANNON.Body.STATIC,
+        shape: new CANNON.Box(new CANNON.Vec3(wallDistance, wallHeight, wallThickness)),
+        position: new CANNON.Vec3(0, 0, -10)
+    });
+    physicsWorld.addBody(backWall);
 }
 
 let duckBody = null; // Store physics body for the duck
