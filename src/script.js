@@ -15,6 +15,7 @@ const earningsContent = document.querySelector('#earnings-content');
 const buyDiceBtn = document.querySelector('#buy-dice-btn');
 const dicePrice = document.querySelector('#dice-price');
 const comboInfo = document.querySelector('#combo-info');
+const darkModeToggle = document.querySelector('#dark-mode-toggle');
 
 let renderer, scene, camera, diceMesh, physicsWorld;
 let raycaster, mouse;
@@ -66,6 +67,21 @@ if (buyDiceBtn) {
 }
 canvasEl.addEventListener('click', handleDiceClick);
 canvasEl.addEventListener('mousemove', handleMouseMove);
+
+// Dark mode toggle
+darkModeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    darkModeToggle.textContent = isDarkMode ? '☀️' : '🌙';
+    localStorage.setItem('darkMode', isDarkMode);
+});
+
+// Load dark mode preference
+const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+if (savedDarkMode) {
+    document.body.classList.add('dark-mode');
+    darkModeToggle.textContent = '☀️';
+}
 
 function initScene() {
 
@@ -536,8 +552,8 @@ function calculateEarnings() {
     gameState.money += earnings;
     moneyAmount.textContent = `$${gameState.money}`;
     
-    // Show earnings in score result area
-    scoreResult.textContent = `${gameState.currentScore} (+$${earnings})`;
+    // Keep score display as is
+    scoreResult.textContent = gameState.currentScore;
     scoreResult.style.color = '#2e8b57';
     
     // Show earnings breakdown

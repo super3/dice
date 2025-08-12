@@ -32,6 +32,82 @@ body {
     z-index: 100;
 }
 
+.dark-mode-toggle {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(0, 0, 0, 0.05);
+    border: none;
+    border-radius: 10px;
+    padding: 0.5rem 0.8rem;
+    font-size: 1.4rem;
+    cursor: pointer;
+    z-index: 100;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.dark-mode-toggle:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: scale(1.05);
+}
+
+.dark-mode-toggle:active {
+    transform: scale(0.95);
+}
+
+/* Dark mode styles */
+body.dark-mode {
+    --color-text: #e0e0e0;
+    --color-bg: #1a1a1a;
+}
+
+body.dark-mode .game-title {
+    color: #e0e0e0;
+}
+
+body.dark-mode .game-info,
+body.dark-mode .score-rerolls {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .round::after,
+body.dark-mode .target::after,
+body.dark-mode .score::after {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .dark-mode-toggle {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .dark-mode-toggle:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .earnings-details {
+    background: rgba(46, 139, 87, 0.2);
+    color: #e0e0e0;
+}
+
+body.dark-mode .store {
+    background: rgba(39, 62, 154, 0.2);
+    color: #e0e0e0;
+}
+
+body.dark-mode .earnings-title,
+body.dark-mode .store-title {
+    color: #e0e0e0;
+}
+
+body.dark-mode .store-table {
+    color: #e0e0e0;
+}
+
+body.dark-mode .buy-btn:disabled {
+    background-color: rgba(100, 100, 100, 0.5);
+    color: #888;
+}
+
 main {
     display: flex;
     flex-direction: column;
