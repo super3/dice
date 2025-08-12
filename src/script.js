@@ -19,6 +19,7 @@ const darkModeToggle = document.querySelector('#dark-mode-toggle');
 
 let renderer, scene, camera, diceMesh, physicsWorld;
 let raycaster, mouse;
+let floorMesh;  // Store reference to floor
 const lockSprites = [];
 
 // Game state
@@ -52,22 +53,6 @@ const params = {
 
 const diceArray = [];
 
-initPhysics();
-initScene();
-
-window.addEventListener('resize', updateSceneSize);
-window.addEventListener('dblclick', handleRoll);
-rollBtn.addEventListener('click', handleRoll);
-nextRoundBtn.addEventListener('click', nextRound);
-if (buyDiceBtn) {
-    buyDiceBtn.addEventListener('click', buyDice);
-    console.log('Buy dice button listener added');
-} else {
-    console.error('Buy dice button not found!');
-}
-canvasEl.addEventListener('click', handleDiceClick);
-canvasEl.addEventListener('mousemove', handleMouseMove);
-
 // SVG icons for dark mode toggle
 const moonSVG = `<svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -85,6 +70,31 @@ const sunSVG = `<svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24"
     <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
 </svg>`;
 
+// Load dark mode preference BEFORE scene init
+const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+if (savedDarkMode) {
+    document.body.classList.add('dark-mode');
+    darkModeToggle.innerHTML = sunSVG;
+    // Flag to apply dark mode after scene init
+    window.needsDarkModeInit = true;
+}
+
+initPhysics();
+initScene();
+
+window.addEventListener('resize', updateSceneSize);
+window.addEventListener('dblclick', handleRoll);
+rollBtn.addEventListener('click', handleRoll);
+nextRoundBtn.addEventListener('click', nextRound);
+if (buyDiceBtn) {
+    buyDiceBtn.addEventListener('click', buyDice);
+    console.log('Buy dice button listener added');
+} else {
+    console.error('Buy dice button not found!');
+}
+canvasEl.addEventListener('click', handleDiceClick);
+canvasEl.addEventListener('mousemove', handleMouseMove);
+
 // Dark mode toggle
 darkModeToggle.addEventListener('click', () => {
     document.body.classList.toggle('dark-mode');
@@ -94,53 +104,59 @@ darkModeToggle.addEventListener('click', () => {
     updateDiceMaterialsForDarkMode(isDarkMode);
 });
 
-// Load dark mode preference
-const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-if (savedDarkMode) {
-    document.body.classList.add('dark-mode');
-    darkModeToggle.innerHTML = sunSVG;
-}
-
 function updateDiceMaterialsForDarkMode(isDarkMode) {
+    console.log('updateDiceMaterialsForDarkMode called, isDarkMode:', isDarkMode);
+    console.log('Scene exists:', !!scene, 'FloorMesh exists:', !!floorMesh);
+    
     // Update lighting for dark mode
     if (scene) {
         const ambientLight = scene.children.find(child => child.type === 'AmbientLight');
+        console.log('Ambient light found:', !!ambientLight);
         if (ambientLight) {
             ambientLight.intensity = isDarkMode ? 0.15 : 0.5;
+            console.log('Ambient light intensity set to:', ambientLight.intensity);
         }
         
-        // Find and update the floor
-        const floor = scene.children.find(child => 
-            child.geometry && child.geometry.type === 'PlaneGeometry' && child.position.y < 0);
-        if (floor) {
+        // Update the floor material
+        if (floorMesh) {
+            console.log('Current floor material type:', floorMesh.material.type);
             if (isDarkMode) {
                 // Switch to a standard material that can receive light
-                if (!floor.userData.darkMaterial) {
-                    floor.userData.darkMaterial = new THREE.MeshStandardMaterial({
+                if (!floorMesh.userData.darkMaterial) {
+                    console.log('Creating new dark material');
+                    floorMesh.userData.darkMaterial = new THREE.MeshStandardMaterial({
                         color: 0x0a0a0a,
                         roughness: 1,
                         metalness: 0,
                         transparent: true,
                         opacity: 0.5
                     });
-                    floor.userData.lightMaterial = floor.material;
+                    floorMesh.userData.lightMaterial = floorMesh.material;
                 }
-                floor.material = floor.userData.darkMaterial;
-                floor.receiveShadow = true;
+                floorMesh.material = floorMesh.userData.darkMaterial;
+                floorMesh.receiveShadow = true;
+                console.log('Floor material switched to dark:', floorMesh.material.type);
             } else {
                 // Switch back to shadow material
-                if (floor.userData.lightMaterial) {
-                    floor.material = floor.userData.lightMaterial;
+                if (floorMesh.userData.lightMaterial) {
+                    floorMesh.material = floorMesh.userData.lightMaterial;
+                    console.log('Floor material switched to light:', floorMesh.material.type);
                 }
-                floor.receiveShadow = true;
+                floorMesh.receiveShadow = true;
             }
+        } else {
+            console.log('FloorMesh not found!');
         }
+    } else {
+        console.log('Scene not found!');
     }
     
     // Remove old glow lights
     const glowLights = scene.children.filter(child => child.userData.isGlowLight);
+    console.log('Removing', glowLights.length, 'old glow lights');
     glowLights.forEach(light => scene.remove(light));
     
+    console.log('Processing', diceArray.length, 'dice');
     diceArray.forEach((dice, index) => {
         if (dice && dice.mesh) {
             // Find the outer mesh (white part of dice)
@@ -209,11 +225,6 @@ function initScene() {
         addDiceEvents(diceArray[i], i);
     }
     
-    // Apply dark mode glow if already in dark mode
-    if (document.body.classList.contains('dark-mode')) {
-        updateDiceMaterialsForDarkMode(true);
-    }
-    
     // Position initial dice
     repositionAllDice();
 
@@ -222,6 +233,16 @@ function initScene() {
     // Don't throw dice on page load
 
     render();
+    
+    // Apply dark mode settings after render starts with a delay
+    if (window.needsDarkModeInit) {
+        setTimeout(() => {
+            console.log('Applying dark mode on init');
+            updateDiceMaterialsForDarkMode(true);
+            // Force a re-render
+            renderer.render(scene, camera);
+        }, 500);
+    }
 }
 
 function initPhysics() {
@@ -233,23 +254,23 @@ function initPhysics() {
 }
 
 function createFloor() {
-    const floor = new THREE.Mesh(
+    floorMesh = new THREE.Mesh(
         new THREE.PlaneGeometry(1000, 1000),
         new THREE.ShadowMaterial({
             opacity: .1
         })
     )
-    floor.receiveShadow = true;
-    floor.position.y = -3;
-    floor.quaternion.setFromAxisAngle(new THREE.Vector3(-1, 0, 0), Math.PI * .5);
-    scene.add(floor);
+    floorMesh.receiveShadow = true;
+    floorMesh.position.y = -3;
+    floorMesh.quaternion.setFromAxisAngle(new THREE.Vector3(-1, 0, 0), Math.PI * .5);
+    scene.add(floorMesh);
 
     const floorBody = new CANNON.Body({
         type: CANNON.Body.STATIC,
         shape: new CANNON.Plane(),
     });
-    floorBody.position.copy(floor.position);
-    floorBody.quaternion.copy(floor.quaternion);
+    floorBody.position.copy(floorMesh.position);
+    floorBody.quaternion.copy(floorMesh.quaternion);
     physicsWorld.addBody(floorBody);
 }
 
