@@ -292,6 +292,7 @@ function createFloor() {
 }
 
 let duckBody = null; // Store physics body for the duck
+let duckMesh = null; // Store the duck mesh for removal
 
 function loadRubberDucky() {
     const loader = new GLTFLoader();
@@ -299,6 +300,7 @@ function loadRubberDucky() {
         'models/duck.glb',
         function (gltf) {
             const duck = gltf.scene;
+            duckMesh = duck; // Store reference globally
             
             // Scale and position the duck
             duck.scale.set(1.4, 1.4, 1.4); // Big duck!
@@ -790,6 +792,23 @@ function nextRound() {
     gameState.diceRolling = false;
     gameState.currentCombos = null;
     gameState.hasRolled = false;  // Reset hasRolled for new round
+    gameState.hasDuck = false;  // Reset duck ownership
+    
+    // Remove rubber ducky for next round
+    if (duckMesh) {
+        scene.remove(duckMesh);
+        duckMesh = null;
+    }
+    if (duckBody) {
+        physicsWorld.removeBody(duckBody);
+        duckBody = null;
+    }
+    
+    // Re-enable duck button for next round
+    if (buyDuckBtn) {
+        buyDuckBtn.textContent = 'Get';
+        buyDuckBtn.disabled = false;
+    }
     
     // Reset UI
     rollBtn.style.display = 'block';
@@ -842,6 +861,23 @@ function restartGame() {
     gameState.rerollsPurchased = 0;  // Reset reroll purchases
     gameState.diceRolling = false;  // Reset rolling flag
     gameState.currentCombos = null;  // Reset combos
+    gameState.hasDuck = false;  // Reset duck ownership
+    
+    // Remove rubber ducky if it exists
+    if (duckMesh) {
+        scene.remove(duckMesh);
+        duckMesh = null;
+    }
+    if (duckBody) {
+        physicsWorld.removeBody(duckBody);
+        duckBody = null;
+    }
+    
+    // Re-enable duck button for new game
+    if (buyDuckBtn) {
+        buyDuckBtn.textContent = 'Get';
+        buyDuckBtn.disabled = false;
+    }
     
     // Remove extra dice if any were purchased
     while (params.numberOfDice > 2) {
@@ -1131,7 +1167,6 @@ function buyDuck() {
         
         // Disable the button
         if (buyDuckBtn) {
-            buyDuckBtn.textContent = 'Got it!';
             buyDuckBtn.disabled = true;
         }
         
