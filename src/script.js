@@ -21,6 +21,7 @@ const rerollPrice = document.querySelector('#reroll-price');
 const buyDuckBtn = document.querySelector('#buy-duck-btn');
 const comboInfo = document.querySelector('#combo-info');
 const darkModeToggle = document.querySelector('#dark-mode-toggle');
+const versionInfo = document.querySelector('#version-info');
 
 let renderer, scene, camera, diceMesh, physicsWorld;
 let raycaster, mouse;
@@ -86,6 +87,14 @@ if (savedDarkMode) {
     darkModeToggle.innerHTML = sunSVG;
     // Flag to apply dark mode after scene init
     window.needsDarkModeInit = true;
+}
+
+// Display version info
+if (versionInfo) {
+    // Version from package.json and git commit
+    const version = '1.0.0';
+    const commit = '365362e'; // Will be updated with each deploy
+    versionInfo.textContent = `v${version}-${commit}`;
 }
 
 initPhysics();
@@ -313,9 +322,9 @@ function createInvisibleWalls() {
     const visibleHeight = 2 * Math.tan(fov / 2) * totalDistance;
     const visibleWidth = visibleHeight * aspect;
     
-    // Add safety margin to account for dice bouncing - tighter on mobile
+    // Add safety margin to account for dice bouncing - looser walls for more play area
     const isMobile = window.innerWidth < 768;
-    const margin = isMobile ? 0.65 : 0.75; // Tighter walls on mobile
+    const margin = isMobile ? 0.85 : 0.9; // More room to play
     const wallDistance = (visibleWidth / 2) * margin;
     const wallHeight = 50; // Make walls tall enough
     const wallThickness = 1;

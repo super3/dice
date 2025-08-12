@@ -32,6 +32,18 @@ body {
     z-index: 100;
 }
 
+.version-info {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    font-size: 0.7em;
+    color: #666;
+    opacity: 0.6;
+    font-family: monospace;
+    user-select: none;
+    z-index: 100;
+}
+
 .dark-mode-toggle {
     position: absolute;
     top: 1rem;
@@ -66,6 +78,10 @@ body.dark-mode {
 
 body.dark-mode .game-title {
     color: #e0e0e0;
+}
+
+body.dark-mode .version-info {
+    color: #999;
 }
 
 body.dark-mode .game-info,
