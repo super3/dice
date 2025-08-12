@@ -445,16 +445,15 @@ function updateScore() {
         if (comboBonuses.total > 0) {
             scoreResult.textContent = `${total} (${baseTotal}+${comboBonuses.total})`;
             // Show combo info
-            comboInfo.style.display = 'block';
             comboInfo.innerHTML = comboBonuses.descriptions.join(' • ');
         } else {
             scoreResult.textContent = total;
-            comboInfo.style.display = 'none';
+            comboInfo.innerHTML = '';
         }
     } else {
         // No combos before first roll
         scoreResult.textContent = total;
-        comboInfo.style.display = 'none';
+        comboInfo.innerHTML = '';
         gameState.currentCombos = null;
     }
     
@@ -575,7 +574,7 @@ function nextRound() {
     rollBtn.textContent = 'Roll Dice';
     scoreResult.style.color = '#d45f2e';
     roundSummary.style.display = 'none';  // Hide round summary
-    comboInfo.style.display = 'none';  // Hide combo info
+    comboInfo.innerHTML = '';  // Clear combo info
     
     // Update dice visuals and clear all locks
     diceArray.forEach((dice, index) => {
@@ -639,7 +638,7 @@ function restartGame() {
     rollBtn.disabled = false;
     scoreResult.style.color = '#d45f2e';
     roundSummary.style.display = 'none';  // Hide round summary
-    comboInfo.style.display = 'none';  // Hide combo info
+    comboInfo.innerHTML = '';  // Clear combo info
     
     // Restore original click handler
     rollBtn.removeEventListener('click', restartGame);

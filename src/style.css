@@ -64,15 +64,32 @@ canvas {
 .game-info {
     display: flex;
     justify-content: center;
-    gap: 3.5rem;
+    align-items: center;
+    gap: 0;
     width: 100%;
     margin-bottom: 1.5rem;
     max-width: 100%;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
 }
 
 .round, .target, .money {
     font-weight: bold;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
+    padding: 0 1rem;
+    position: relative;
+}
+
+.round::after, .target::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 1.5rem;
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .round span, .target span {
@@ -84,21 +101,47 @@ canvas {
     font-weight: bold;
 }
 
+#round-number, #target-score, #money-amount {
+    display: inline-block;
+    min-width: 2.5rem;
+    text-align: right;
+}
+
+.score-rerolls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    margin-bottom: 1rem;
+    max-width: 100%;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+}
+
 .score {
     font-weight: bold;
-    font-size: 1.8rem;
-    text-align: center;
-    margin-bottom: 1rem;
-    width: 100%;
-    max-width: 100%;
+    font-size: 1.6rem;
+    padding: 0 1rem;
+    position: relative;
+}
+
+.score::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 1.5rem;
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .rerolls {
-    text-align: center;
-    font-size: 1.2rem;
-    margin-bottom: 0.5rem;
-    width: 100%;
-    max-width: 100%;
+    font-weight: bold;
+    font-size: 1.6rem;
+    padding: 0 1rem;
 }
 
 .rerolls span {
@@ -173,7 +216,7 @@ canvas {
 .round-summary {
     display: flex;
     gap: 1rem;
-    margin: 0.5rem 0;
+    margin: 0 0 1rem 0;
     align-items: stretch;
     width: 100%;
 }
@@ -245,10 +288,20 @@ canvas {
     font-size: 1rem;
     color: #9c27b0;
     font-weight: bold;
-    margin: 0.5rem 0;
+    margin: 0 0 1rem 0;
     padding: 0.3rem;
-    background: rgba(156, 39, 176, 0.1);
     border-radius: 5px;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    background: transparent;
+    transition: background-color 0.2s ease;
+}
+
+.combo-info:not(:empty) {
+    background: rgba(156, 39, 176, 0.1);
 }
 
 .store {
