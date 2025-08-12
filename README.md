@@ -60,33 +60,20 @@ Between rounds, spend your earnings on:
 - Save rerolls when possible for efficiency bonuses
 - Buy additional dice to make higher targets achievable
 
-## 🚀 Development
+## 🛠️ Development
 
 ### Local Setup
 ```bash
 # Clone the repository
-git clone https://github.com/super3/dice.git
-cd dice
+git clone https://github.com/super3/dice.git && cd dice
 
-# Start the development server
-npm start
-
-# Or for development with cache disabled
-npm run dev
-
-# Server will open automatically at http://localhost:8000
-```
-
-### Testing
-```bash
 # Run tests
 npm test
 
-# Run tests in watch mode
-npm run test:watch
+# Start development server (cache disabled)
+npm run dev
 
-# Run tests with coverage report
-npm run test:coverage
+# Server will open automatically at http://localhost:8000
 ```
 
 ### Technologies
@@ -98,18 +85,18 @@ npm run test:coverage
 
 ### Project Structure
 ```
-├── index.html           # Main HTML file
-├── script.js            # Game logic and physics
-├── style.css            # UI styling
+├── index.html              # Main HTML file
 ├── src/
-│   └── gameLogic.js     # Extracted game logic for testing
+│   ├── script.js           # Game logic and physics
+│   ├── style.css           # UI styling
+│   └── gameLogic.js        # Extracted game logic for testing
 ├── tests/
-│   ├── gameLogic.test.js  # Unit tests
-│   └── __mocks__/       # Test mocks for Three.js and Cannon
+│   ├── gameLogic.test.js   # Unit tests
+│   └── __mocks__/          # Test mocks for Three.js and Cannon
 └── .github/
     └── workflows/
-        ├── frontend.yml # GitHub Pages deployment
-        └── test.yml     # CI testing workflow
+        ├── frontend.yml    # GitHub Pages deployment
+        └── test.yml        # CI testing workflow
 ```
 
 ## 📜 Credits
