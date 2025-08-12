@@ -7,6 +7,7 @@ const canvasEl = document.querySelector('#canvas');
 const scoreResult = document.querySelector('#score-result');
 const rollBtn = document.querySelector('#roll-btn');
 const nextRoundBtn = document.querySelector('#next-round-btn');
+const kickTableBtn = document.querySelector('#kick-table-btn');
 const roundNumber = document.querySelector('#round-number');
 const targetScore = document.querySelector('#target-score');
 const rerollsLeft = document.querySelector('#rerolls-left');
@@ -59,6 +60,7 @@ const params = {
 };
 
 const diceArray = [];
+let kickTableTimeout = null;  // Track timeout for showing kick button
 
 // SVG icons for dark mode toggle
 const moonSVG = `<svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -93,6 +95,7 @@ window.addEventListener('resize', updateSceneSize);
 window.addEventListener('dblclick', handleRoll);
 rollBtn.addEventListener('click', handleRoll);
 nextRoundBtn.addEventListener('click', nextRound);
+kickTableBtn.addEventListener('click', kickTable);
 if (buyDiceBtn) {
     buyDiceBtn.addEventListener('click', buyDice);
     console.log('Buy dice button listener added');
@@ -679,6 +682,15 @@ function updateScore() {
     // Check if all expected dice have scores (locked dice keep their old scores)
     if (settledUnlockedDice >= unlockedDiceCount) {
         gameState.diceRolling = false;  // Dice have settled
+        
+        // Clear kick table timer and hide button, restore roll button
+        if (kickTableTimeout) {
+            clearTimeout(kickTableTimeout);
+            kickTableTimeout = null;
+        }
+        kickTableBtn.style.display = 'none';
+        rollBtn.style.display = 'block';
+        
         updateUI();  // Re-enable button if appropriate
         checkRoundComplete();
     }
@@ -1146,8 +1158,59 @@ function repositionAllDice() {
     }, 100);
 }
 
+function kickTable() {
+    console.log('Kicking the table!');
+    
+    // Apply a random upward and sideways force to all dice
+    diceArray.forEach((dice) => {
+        if (dice && dice.body) {
+            // Wake up the dice first
+            dice.body.allowSleep = false;
+            dice.body.wakeUp();
+            
+            // Random kick force - gentle nudge
+            const kickForce = new CANNON.Vec3(
+                (Math.random() - 0.5) * 5,   // Random X force
+                Math.random() * 5 + 3,        // Upward Y force (gentle bump)
+                (Math.random() - 0.5) * 5    // Random Z force
+            );
+            dice.body.applyImpulse(kickForce, dice.body.position);
+            
+            // Allow sleep again after a moment
+            setTimeout(() => {
+                if (dice.body) {
+                    dice.body.allowSleep = true;
+                }
+            }, 100);
+        }
+    });
+    
+    // Hide the kick button and show roll button again
+    kickTableBtn.style.display = 'none';
+    rollBtn.style.display = 'block';
+    
+    if (kickTableTimeout) {
+        clearTimeout(kickTableTimeout);
+    }
+    startKickTableTimer();
+}
+
+function startKickTableTimer() {
+    // Show "Kick the Table" button after 3 seconds if dice are still rolling
+    kickTableTimeout = setTimeout(() => {
+        if (gameState.diceRolling) {
+            kickTableBtn.style.display = 'block';
+            rollBtn.style.display = 'none';  // Hide roll button while kick is available
+        }
+    }, 3000);
+}
+
 function throwDice() {
     gameState.hasRolled = true;  // Mark that dice have been rolled
+    gameState.diceRolling = true; // Mark dice as currently rolling
+    
+    // Start the kick table timer
+    startKickTableTimer();
     
     // Keep scores for locked dice
     const oldScores = [...gameState.diceScores];

@@ -252,7 +252,7 @@ canvas {
     color: #d45f2e;
 }
 
-.ui-controls #roll-btn, .ui-controls #next-round-btn {
+.ui-controls #roll-btn, .ui-controls #next-round-btn, .ui-controls #kick-table-btn {
     background-color: #273e9a;
     font-weight: bold;
     color: #ffffff;
@@ -270,6 +270,17 @@ canvas {
 
 .ui-controls #next-round-btn {
     background-color: #2e8b57;
+}
+
+.ui-controls #kick-table-btn {
+    background-color: #d45f2e;
+    animation: shake 0.5s infinite;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
 }
 
 .ui-controls #roll-btn:active, .ui-controls #next-round-btn:active {
