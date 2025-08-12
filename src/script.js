@@ -645,7 +645,8 @@ function calculateEarnings() {
     // Base earnings: difference between score and target
     const baseEarnings = gameState.currentScore - gameState.targetScore;
     earnings += baseEarnings;
-    detailsHtml += `<tr><td>Score Over Target (${gameState.currentScore} - ${gameState.targetScore})</td><td class="earning-positive">+$${baseEarnings}</td></tr>`;
+    const pointText = baseEarnings === 1 ? 'Extra Point' : 'Extra Points';
+    detailsHtml += `<tr><td>${baseEarnings} ${pointText}</td><td class="earning-positive">+$${baseEarnings}</td></tr>`;
     
     // Perfect roll bonus: exactly hit the target
     if (gameState.currentScore === gameState.targetScore) {
