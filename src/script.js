@@ -68,19 +68,106 @@ if (buyDiceBtn) {
 canvasEl.addEventListener('click', handleDiceClick);
 canvasEl.addEventListener('mousemove', handleMouseMove);
 
+// SVG icons for dark mode toggle
+const moonSVG = `<svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+</svg>`;
+
+const sunSVG = `<svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+    <circle cx="12" cy="12" r="5"></circle>
+    <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+    <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+    <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+    <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+</svg>`;
+
 // Dark mode toggle
 darkModeToggle.addEventListener('click', () => {
     document.body.classList.toggle('dark-mode');
     const isDarkMode = document.body.classList.contains('dark-mode');
-    darkModeToggle.textContent = isDarkMode ? '☀️' : '🌙';
+    darkModeToggle.innerHTML = isDarkMode ? sunSVG : moonSVG;
     localStorage.setItem('darkMode', isDarkMode);
+    updateDiceMaterialsForDarkMode(isDarkMode);
 });
 
 // Load dark mode preference
 const savedDarkMode = localStorage.getItem('darkMode') === 'true';
 if (savedDarkMode) {
     document.body.classList.add('dark-mode');
-    darkModeToggle.textContent = '☀️';
+    darkModeToggle.innerHTML = sunSVG;
+}
+
+function updateDiceMaterialsForDarkMode(isDarkMode) {
+    // Update lighting for dark mode
+    if (scene) {
+        const ambientLight = scene.children.find(child => child.type === 'AmbientLight');
+        if (ambientLight) {
+            ambientLight.intensity = isDarkMode ? 0.15 : 0.5;
+        }
+        
+        // Find and update the floor
+        const floor = scene.children.find(child => 
+            child.geometry && child.geometry.type === 'PlaneGeometry' && child.position.y < 0);
+        if (floor) {
+            if (isDarkMode) {
+                // Switch to a standard material that can receive light
+                if (!floor.userData.darkMaterial) {
+                    floor.userData.darkMaterial = new THREE.MeshStandardMaterial({
+                        color: 0x0a0a0a,
+                        roughness: 1,
+                        metalness: 0,
+                        transparent: true,
+                        opacity: 0.5
+                    });
+                    floor.userData.lightMaterial = floor.material;
+                }
+                floor.material = floor.userData.darkMaterial;
+                floor.receiveShadow = true;
+            } else {
+                // Switch back to shadow material
+                if (floor.userData.lightMaterial) {
+                    floor.material = floor.userData.lightMaterial;
+                }
+                floor.receiveShadow = true;
+            }
+        }
+    }
+    
+    // Remove old glow lights
+    const glowLights = scene.children.filter(child => child.userData.isGlowLight);
+    glowLights.forEach(light => scene.remove(light));
+    
+    diceArray.forEach((dice, index) => {
+        if (dice && dice.mesh) {
+            // Find the outer mesh (white part of dice)
+            const outerMesh = dice.mesh.children.find(child => 
+                child.material && child.material.color);
+            
+            if (outerMesh) {
+                if (isDarkMode) {
+                    // Keep dice normal but add subtle rim lighting
+                    outerMesh.material.emissive = new THREE.Color(0x6699ff);
+                    outerMesh.material.emissiveIntensity = 0.1;
+                    
+                    // Add a point light under each dice for glow effect
+                    const glowLight = new THREE.PointLight(0x4488ff, 2, 8);
+                    glowLight.position.copy(dice.mesh.position);
+                    glowLight.position.y = 0;
+                    glowLight.userData.isGlowLight = true;
+                    glowLight.userData.diceIndex = index;
+                    scene.add(glowLight);
+                } else {
+                    // Normal dice in light mode
+                    outerMesh.material.emissive = new THREE.Color(0x000000);
+                    outerMesh.material.emissiveIntensity = 0;
+                }
+            }
+        }
+    });
 }
 
 function initScene() {
@@ -120,6 +207,11 @@ function initScene() {
     for (let i = 0; i < params.numberOfDice; i++) {
         diceArray.push(createDice(i));
         addDiceEvents(diceArray[i], i);
+    }
+    
+    // Apply dark mode glow if already in dark mode
+    if (document.body.classList.contains('dark-mode')) {
+        updateDiceMaterialsForDarkMode(true);
     }
     
     // Position initial dice
@@ -793,6 +885,17 @@ function render() {
             // Make sprite always face the camera
             lockSprites[dice.index].lookAt(camera.position);
         }
+        
+        // Update glow light position if in dark mode
+        if (document.body.classList.contains('dark-mode')) {
+            const glowLight = scene.children.find(child => 
+                child.userData.isGlowLight && child.userData.diceIndex === dice.index);
+            if (glowLight) {
+                glowLight.position.x = dice.body.position.x;
+                glowLight.position.y = dice.body.position.y;
+                glowLight.position.z = dice.body.position.z;
+            }
+        }
     }
 
     renderer.render(scene, camera);
@@ -834,6 +937,24 @@ function buyDice() {
         const newDice = createDice(newIndex);
         diceArray.push(newDice);
         addDiceEvents(newDice, newIndex);
+        
+        // Apply dark mode glow if in dark mode
+        if (document.body.classList.contains('dark-mode')) {
+            const outerMesh = newDice.mesh.children.find(child => 
+                child.material && child.material.color);
+            if (outerMesh) {
+                outerMesh.material.emissive = new THREE.Color(0x6699ff);
+                outerMesh.material.emissiveIntensity = 0.1;
+                
+                // Add glow light for new dice
+                const glowLight = new THREE.PointLight(0x4488ff, 2, 8);
+                glowLight.position.copy(newDice.mesh.position);
+                glowLight.position.y = 0;
+                glowLight.userData.isGlowLight = true;
+                glowLight.userData.diceIndex = newIndex;
+                scene.add(glowLight);
+            }
+        }
         
         // Now increment the number of dice
         params.numberOfDice++;
