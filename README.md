@@ -1,24 +1,11 @@
-<h1 align="center">
-  Dice
-  <br>
-</h1>
+# Dice ([Play Game](https://super3.github.io/dice/))
 
-<h4 align="center">A browser-based roguelike dice game with 3D physics built with <a href="https://threejs.org">Three.js</a> and <a href="https://pmndrs.github.io/cannon-es/">Cannon-ES</a>.</h4>
-
-<div align="center">
+A browser-based roguelike dice game with 3D physics built with [Three.js](https://threejs.org) and [Cannon-ES](https://pmndrs.github.io/cannon-es/).
 
 [![Frontend Build Status](https://img.shields.io/github/actions/workflow/status/super3/dice/frontend.yml?label=frontend)](https://github.com/super3/dice/actions/workflows/frontend.yml)
 [![Test Status](https://img.shields.io/github/actions/workflow/status/super3/dice/test.yml?label=tests)](https://github.com/super3/dice/actions/workflows/test.yml)
 [![Coverage Status](https://coveralls.io/repos/github/super3/dice/badge.svg?branch=main)](https://coveralls.io/github/super3/dice?branch=main)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?label=license)](https://github.com/super3/dice/blob/main/LICENSE)
-
-</div>
-
-<p align="center">
-  <a href="https://super3.github.io/dice/">
-    <img src="https://img.shields.io/badge/🎮_Play_Game-blue?style=for-the-badge" alt="Play Game">
-  </a>
-</p>
 
 ## 🚀 Quick Start
 ```bash
