@@ -297,7 +297,7 @@ let duckMesh = null; // Store the duck mesh for removal
 function loadRubberDucky() {
     const loader = new GLTFLoader();
     loader.load(
-        'models/duck.glb',
+        'src/duck.glb',
         function (gltf) {
             const duck = gltf.scene;
             duckMesh = duck; // Store reference globally
