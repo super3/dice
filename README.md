@@ -2,8 +2,8 @@
 
 A browser-based roguelike dice game with 3D physics built with [Three.js](https://threejs.org) and [Cannon-ES](https://pmndrs.github.io/cannon-es/).
 
-[![Frontend Build Status](https://img.shields.io/github/actions/workflow/status/super3/dice/frontend.yml?label=frontend)](https://github.com/super3/dice/actions/workflows/frontend.yml)
-[![Test Status](https://img.shields.io/github/actions/workflow/status/super3/dice/test.yml?label=tests)](https://github.com/super3/dice/actions/workflows/test.yml)
+[![Frontend Build Status](https://img.shields.io/github/actions/workflow/status/super3/dice/frontend.yml?branch=main&label=frontend)](https://github.com/super3/dice/actions/workflows/frontend.yml)
+[![Test Status](https://img.shields.io/github/actions/workflow/status/super3/dice/test.yml?branch=main&label=tests)](https://github.com/super3/dice/actions/workflows/test.yml)
 [![Coverage Status](https://coveralls.io/repos/github/super3/dice/badge.svg?branch=main)](https://coveralls.io/github/super3/dice?branch=main)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?label=license)](https://github.com/super3/dice/blob/main/LICENSE)
 
