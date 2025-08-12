@@ -1,5 +1,6 @@
 import * as CANNON from 'https://cdn.skypack.dev/cannon-es';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 
 const canvasEl = document.querySelector('#canvas');
@@ -16,6 +17,7 @@ const buyDiceBtn = document.querySelector('#buy-dice-btn');
 const dicePrice = document.querySelector('#dice-price');
 const buyRerollBtn = document.querySelector('#buy-reroll-btn');
 const rerollPrice = document.querySelector('#reroll-price');
+const buyDuckBtn = document.querySelector('#buy-duck-btn');
 const comboInfo = document.querySelector('#combo-info');
 const darkModeToggle = document.querySelector('#dark-mode-toggle');
 
@@ -41,7 +43,8 @@ const gameState = {
     dicePurchased: 0,  // Track number of dice purchased
     rerollBaseCost: 5,  // Base cost for rerolls
     rerollsPurchased: 0,  // Track number of rerolls purchased
-    diceRolling: false  // Track if dice are currently rolling
+    diceRolling: false,  // Track if dice are currently rolling
+    hasDuck: false  // Track if lucky duck has been acquired
 };
 
 // Target scores for each round (gets progressively harder)
@@ -96,6 +99,9 @@ if (buyDiceBtn) {
 }
 if (buyRerollBtn) {
     buyRerollBtn.addEventListener('click', buyReroll);
+}
+if (buyDuckBtn) {
+    buyDuckBtn.addEventListener('click', buyDuck);
 }
 canvasEl.addEventListener('click', handleDiceClick);
 canvasEl.addEventListener('mousemove', handleMouseMove);
@@ -230,6 +236,9 @@ function initScene() {
         addDiceEvents(diceArray[i], i);
     }
     
+    // Rubber ducky is loaded via store purchase
+    // loadRubberDucky();
+    
     // Position initial dice
     repositionAllDice();
 
@@ -277,6 +286,74 @@ function createFloor() {
     floorBody.position.copy(floorMesh.position);
     floorBody.quaternion.copy(floorMesh.quaternion);
     physicsWorld.addBody(floorBody);
+}
+
+let duckBody = null; // Store physics body for the duck
+
+function loadRubberDucky() {
+    const loader = new GLTFLoader();
+    loader.load(
+        'models/duck.glb',
+        function (gltf) {
+            const duck = gltf.scene;
+            
+            // Scale and position the duck
+            duck.scale.set(1.4, 1.4, 1.4); // Big duck!
+            duck.position.set(2, 10, -5); // Start high above for drop effect
+            duck.rotation.y = Math.PI; // Rotate 180 degrees to face left
+            
+            // Make it cast shadows
+            duck.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+            
+            scene.add(duck);
+            
+            // Create physics body for the duck - smaller collision box to match visual better
+            const duckShape = new CANNON.Box(new CANNON.Vec3(1, 1, 1)); // Smaller collision box
+            duckBody = new CANNON.Body({
+                mass: 5,
+                shape: duckShape,
+                material: new CANNON.Material({
+                    friction: 0.4,
+                    restitution: 0.2 // Less bounce
+                })
+            });
+            
+            duckBody.position.set(2, 10, -5);
+            duckBody.quaternion.setFromEuler(0, Math.PI, 0);
+            physicsWorld.addBody(duckBody);
+            
+            // Update duck position in animation loop
+            const updateDuck = () => {
+                if (duckBody && duck) {
+                    // Offset the visual mesh to sit properly on the ground
+                    duck.position.x = duckBody.position.x;
+                    duck.position.y = duckBody.position.y - 1; // Offset down since collision box center is higher
+                    duck.position.z = duckBody.position.z;
+                    duck.quaternion.copy(duckBody.quaternion);
+                    
+                    // Stop updating once it settles
+                    if (Math.abs(duckBody.velocity.y) < 0.01 && duckBody.position.y < -1) {
+                        return;
+                    }
+                    requestAnimationFrame(updateDuck);
+                }
+            };
+            updateDuck();
+            
+            console.log('Rubber ducky dropped!');
+        },
+        function (progress) {
+            console.log('Loading duck...', (progress.loaded / progress.total * 100) + '%');
+        },
+        function (error) {
+            console.error('Error loading duck:', error);
+        }
+    );
 }
 
 function createDiceMesh() {
@@ -1029,6 +1106,24 @@ function buyReroll() {
         updateStoreUI();
         
         console.log(`Reroll purchased! Now ${totalRerolls} rerolls per round (permanently)`);
+    }
+}
+
+function buyDuck() {
+    if (!gameState.hasDuck) {
+        // It's free!
+        gameState.hasDuck = true;
+        
+        // Load the duck
+        loadRubberDucky();
+        
+        // Disable the button
+        if (buyDuckBtn) {
+            buyDuckBtn.textContent = 'Got it!';
+            buyDuckBtn.disabled = true;
+        }
+        
+        console.log('Rubber ducky acquired!');
     }
 }
 
