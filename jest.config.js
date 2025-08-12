@@ -10,8 +10,7 @@ module.exports = {
     '**/tests/**/*.test.js'
   ],
   collectCoverageFrom: [
-    'src/**/*.js',
-    '!src/**/*.test.js'
+    'src/gameLogic.js'
   ],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js']
 };

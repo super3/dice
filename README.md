@@ -18,11 +18,10 @@
   <a href="https://super3.github.io/dice/">🎮 Play the game here</a>
 </p>
 
-## Quick Start
+## 🚀 Quick Start
 ```bash
 git clone https://github.com/super3/dice.git && cd dice
-npm install && npm test
-npm start
+npm install && npm start
 ```
 
 Open `http://localhost:8000` in your browser to start playing.
