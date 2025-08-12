@@ -1,4 +1,4 @@
-# Dice ([Play Game](https://super3.github.io/dice/))
+# 🎲 Dice · [Play Now →](https://super3.github.io/dice/)
 
 A browser-based roguelike dice game with 3D physics built with [Three.js](https://threejs.org) and [Cannon-ES](https://pmndrs.github.io/cannon-es/).
 
@@ -15,7 +15,7 @@ npm install && npm start
 
 Open `http://localhost:8000` in your browser to start playing.
 
-## 🎲 How to Play
+## 🎮 How to Play
 
 ### Objective
 Roll dice to meet or exceed target scores across increasingly difficult rounds. Earn money based on your performance and spend it on additional dice to improve your chances.
