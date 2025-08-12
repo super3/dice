@@ -383,8 +383,8 @@ function calculateComboBonuses(scores) {
 function addDiceEvents(dice, index) {
     dice.body.addEventListener('sleep', (e) => {
         
-        // Don't calculate score if dice haven't been rolled yet
-        if (!gameState.hasRolled) {
+        // Don't calculate score if dice haven't been rolled yet or if round is complete
+        if (!gameState.hasRolled || gameState.roundComplete) {
             return;
         }
 
