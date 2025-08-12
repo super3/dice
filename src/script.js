@@ -295,28 +295,54 @@ function createFloor() {
 }
 
 function createInvisibleWalls() {
-    // Calculate wall positions based on camera view
-    // Adjust these values for mobile screens
+    // Calculate exact viewport boundaries based on camera FOV and aspect ratio
+    const fov = camera.fov * Math.PI / 180; // Convert to radians
+    const aspect = camera.aspect;
+    
+    // Camera position from position.set(0, .5, 4).multiplyScalar(5)
+    const cameraZ = 20; // 4 * 5
+    const cameraY = 2.5; // 0.5 * 5
+    const floorY = -3;
+    
+    // Calculate distance from camera to the playing area
+    // We need to consider both the vertical and horizontal distance
+    const verticalDistance = Math.abs(cameraY - floorY);
+    const totalDistance = Math.sqrt(cameraZ * cameraZ + verticalDistance * verticalDistance);
+    
+    // Calculate visible width at the dice playing area
+    const visibleHeight = 2 * Math.tan(fov / 2) * totalDistance;
+    const visibleWidth = visibleHeight * aspect;
+    
+    // Add safety margin to account for dice bouncing - tighter on mobile
     const isMobile = window.innerWidth < 768;
-    const wallDistance = isMobile ? 8 : 15; // Closer walls on mobile
+    const margin = isMobile ? 0.65 : 0.75; // Tighter walls on mobile
+    const wallDistance = (visibleWidth / 2) * margin;
     const wallHeight = 50; // Make walls tall enough
     const wallThickness = 1;
+    
+    // Clear any existing walls first
+    clearInvisibleWalls();
+    
+    // Store wall references for later removal
+    gameState.walls = [];
     
     // Left wall
     const leftWall = new CANNON.Body({
         type: CANNON.Body.STATIC,
-        shape: new CANNON.Box(new CANNON.Vec3(wallThickness, wallHeight, wallDistance)),
+        shape: new CANNON.Box(new CANNON.Vec3(wallThickness, wallHeight, 20)),
         position: new CANNON.Vec3(-wallDistance, 0, 0)
     });
     physicsWorld.addBody(leftWall);
+    gameState.walls.push(leftWall);
     
     // Right wall
     const rightWall = new CANNON.Body({
         type: CANNON.Body.STATIC,
-        shape: new CANNON.Box(new CANNON.Vec3(wallThickness, wallHeight, wallDistance)),
+        shape: new CANNON.Box(new CANNON.Vec3(wallThickness, wallHeight, 20)),
         position: new CANNON.Vec3(wallDistance, 0, 0)
     });
     physicsWorld.addBody(rightWall);
+    gameState.walls.push(rightWall);
     
     // Front wall (closer to camera)
     const frontWall = new CANNON.Body({
@@ -325,6 +351,7 @@ function createInvisibleWalls() {
         position: new CANNON.Vec3(0, 0, 10)
     });
     physicsWorld.addBody(frontWall);
+    gameState.walls.push(frontWall);
     
     // Back wall (further from camera)
     const backWall = new CANNON.Body({
@@ -333,6 +360,17 @@ function createInvisibleWalls() {
         position: new CANNON.Vec3(0, 0, -10)
     });
     physicsWorld.addBody(backWall);
+    gameState.walls.push(backWall);
+}
+
+function clearInvisibleWalls() {
+    // Remove existing walls if any
+    if (gameState.walls) {
+        gameState.walls.forEach(wall => {
+            physicsWorld.removeBody(wall);
+        });
+        gameState.walls = [];
+    }
 }
 
 let duckBody = null; // Store physics body for the duck
@@ -1087,6 +1125,11 @@ function updateSceneSize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    
+    // Recreate walls with new viewport dimensions
+    if (physicsWorld) {
+        createInvisibleWalls();
+    }
 }
 
 function getDicePrice() {
