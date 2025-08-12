@@ -1335,15 +1335,25 @@ function throwDice() {
             d.body.velocity.setZero();
             d.body.angularVelocity.setZero();
 
-            d.body.position = new CANNON.Vec3(6, dIdx * 1.5 + 3, 0);
+            // Adjust spawn position based on screen width - more centered on mobile
+            const isMobile = window.innerWidth < 768;
+            const spawnX = isMobile ? 0 : 3; // Center on mobile, slightly right on desktop
+            const spawnY = dIdx * 1.5 + 3;
+            
+            d.body.position = new CANNON.Vec3(spawnX, spawnY, 0);
             d.mesh.position.copy(d.body.position);
 
             d.mesh.rotation.set(2 * Math.PI * Math.random(), 0, 2 * Math.PI * Math.random())
             d.body.quaternion.copy(d.mesh.quaternion);
 
-            const force = 3 + 5 * Math.random();
+            // Adjust force based on spawn position
+            const force = isMobile ? (4 + 3 * Math.random()) : (3 + 5 * Math.random());
+            const forceDirection = isMobile ? 
+                new CANNON.Vec3(-1 + Math.random() * 2, force, -1 + Math.random() * 2) : // More spread on mobile
+                new CANNON.Vec3(-force, force, 0); // Original direction on desktop
+            
             d.body.applyImpulse(
-                new CANNON.Vec3(-force, force, 0),
+                forceDirection,
                 new CANNON.Vec3(0, 0, .2)
             );
 
