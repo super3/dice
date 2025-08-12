@@ -1,4 +1,4 @@
-# 🎲 DiceRun · [Play Now →](https://dicerun.io/)
+# 🎲 DiceRun.io · [Play Now →](https://dicerun.io/)
 
 A browser-based roguelike dice game with 3D physics built with [Three.js](https://threejs.org) and [Cannon-ES](https://pmndrs.github.io/cannon-es/).
 
