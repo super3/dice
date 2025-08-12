@@ -792,23 +792,7 @@ function nextRound() {
     gameState.diceRolling = false;
     gameState.currentCombos = null;
     gameState.hasRolled = false;  // Reset hasRolled for new round
-    gameState.hasDuck = false;  // Reset duck ownership
-    
-    // Remove rubber ducky for next round
-    if (duckMesh) {
-        scene.remove(duckMesh);
-        duckMesh = null;
-    }
-    if (duckBody) {
-        physicsWorld.removeBody(duckBody);
-        duckBody = null;
-    }
-    
-    // Re-enable duck button for next round
-    if (buyDuckBtn) {
-        buyDuckBtn.textContent = 'Get';
-        buyDuckBtn.disabled = false;
-    }
+    // Keep the duck between rounds - don't reset hasDuck
     
     // Reset UI
     rollBtn.style.display = 'block';
