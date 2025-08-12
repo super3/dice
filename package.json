@@ -1,5 +1,5 @@
 {
-  "name": "3d-dice-roguelike",
+  "name": "dicerun",
   "version": "1.0.0",
   "description": "A browser-based roguelike dice game with 3D physics and strategic gameplay",
   "main": "script.js",
@@ -31,5 +31,5 @@
   "bugs": {
     "url": "https://github.com/super3/dice/issues"
   },
-  "homepage": "https://super3.github.io/dice/"
+  "homepage": "https://dicerun.io/"
 }
