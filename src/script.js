@@ -14,6 +14,8 @@ const roundSummary = document.querySelector('#round-summary');
 const earningsContent = document.querySelector('#earnings-content');
 const buyDiceBtn = document.querySelector('#buy-dice-btn');
 const dicePrice = document.querySelector('#dice-price');
+const buyRerollBtn = document.querySelector('#buy-reroll-btn');
+const rerollPrice = document.querySelector('#reroll-price');
 const comboInfo = document.querySelector('#combo-info');
 const darkModeToggle = document.querySelector('#dark-mode-toggle');
 
@@ -37,6 +39,8 @@ const gameState = {
     lastEarnings: 0,  // Track earnings from last round
     diceBaseCost: 10,  // Base cost for dice
     dicePurchased: 0,  // Track number of dice purchased
+    rerollBaseCost: 5,  // Base cost for rerolls
+    rerollsPurchased: 0,  // Track number of rerolls purchased
     diceRolling: false  // Track if dice are currently rolling
 };
 
@@ -89,8 +93,9 @@ nextRoundBtn.addEventListener('click', nextRound);
 if (buyDiceBtn) {
     buyDiceBtn.addEventListener('click', buyDice);
     console.log('Buy dice button listener added');
-} else {
-    console.error('Buy dice button not found!');
+}
+if (buyRerollBtn) {
+    buyRerollBtn.addEventListener('click', buyReroll);
 }
 canvasEl.addEventListener('click', handleDiceClick);
 canvasEl.addEventListener('mousemove', handleMouseMove);
@@ -744,6 +749,7 @@ function restartGame() {
     gameState.money = 0;  // Reset money on game restart
     gameState.lastEarnings = 0;
     gameState.dicePurchased = 0;  // Reset dice purchases
+    gameState.rerollsPurchased = 0;  // Reset reroll purchases
     gameState.diceRolling = false;  // Reset rolling flag
     gameState.currentCombos = null;  // Reset combos
     
@@ -930,16 +936,32 @@ function updateSceneSize() {
 }
 
 function getDicePrice() {
-    // Price increases with each purchase: 10, 15, 25, 40, 60, 85...
-    return Math.floor(gameState.diceBaseCost * Math.pow(1.5, gameState.dicePurchased));
+    // First dice is $5, then: 10, 15, 25, 40, 60...
+    if (gameState.dicePurchased === 0) {
+        return 5;
+    }
+    return Math.floor(gameState.diceBaseCost * Math.pow(1.5, gameState.dicePurchased - 1));
+}
+
+function getRerollPrice() {
+    // Reroll prices: 5, 7, 10, 15, 22...
+    return Math.floor(gameState.rerollBaseCost * Math.pow(1.4, gameState.rerollsPurchased));
 }
 
 function updateStoreUI() {
-    const price = getDicePrice();
-    dicePrice.textContent = `$${price}`;
+    const diceP = getDicePrice();
+    dicePrice.textContent = `$${diceP}`;
     
-    // Disable buy button if can't afford
-    buyDiceBtn.disabled = gameState.money < price;
+    const rerollP = getRerollPrice();
+    if (rerollPrice) {
+        rerollPrice.textContent = `$${rerollP}`;
+    }
+    
+    // Disable buy buttons if can't afford
+    buyDiceBtn.disabled = gameState.money < diceP;
+    if (buyRerollBtn) {
+        buyRerollBtn.disabled = gameState.money < rerollP;
+    }
 }
 
 function buyDice() {
@@ -988,6 +1010,26 @@ function buyDice() {
         updateStoreUI();
         
         console.log('Dice purchased! Total dice:', params.numberOfDice);
+    }
+}
+
+function buyReroll() {
+    const price = getRerollPrice();
+    
+    if (gameState.money >= price) {
+        // Deduct money
+        gameState.money -= price;
+        gameState.rerollsPurchased++;
+        
+        // Add reroll for next round
+        gameState.rerollsRemaining++;
+        
+        // Update UI
+        rerollsLeft.textContent = gameState.rerollsRemaining;
+        moneyAmount.textContent = `$${gameState.money}`;
+        updateStoreUI();
+        
+        console.log('Reroll purchased! Total rerolls for next round:', gameState.rerollsRemaining);
     }
 }
 
