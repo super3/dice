@@ -692,7 +692,7 @@ function handleRoll() {
 function nextRound() {
     gameState.round++;
     gameState.targetScore = roundTargets[Math.min(gameState.round - 1, roundTargets.length - 1)];
-    gameState.rerollsRemaining = 3;
+    gameState.rerollsRemaining = 3 + gameState.rerollsPurchased;
     gameState.currentScore = 0;
     gameState.diceScores = [];
     gameState.lockedDice.clear();
@@ -740,7 +740,7 @@ function restartGame() {
     // Reset game state to round 1
     gameState.round = 1;
     gameState.targetScore = roundTargets[0];
-    gameState.rerollsRemaining = 3;
+    gameState.rerollsRemaining = 3 + gameState.rerollsPurchased;
     gameState.currentScore = 0;
     gameState.diceScores = [];
     gameState.lockedDice.clear();
@@ -1022,15 +1022,13 @@ function buyReroll() {
         gameState.money -= price;
         gameState.rerollsPurchased++;
         
-        // Add reroll for next round
-        gameState.rerollsRemaining++;
+        // Update UI to show new permanent reroll count
+        const totalRerolls = 3 + gameState.rerollsPurchased;
         
-        // Update UI
-        rerollsLeft.textContent = gameState.rerollsRemaining;
         moneyAmount.textContent = `$${gameState.money}`;
         updateStoreUI();
         
-        console.log('Reroll purchased! Total rerolls for next round:', gameState.rerollsRemaining);
+        console.log(`Reroll purchased! Now ${totalRerolls} rerolls per round (permanently)`);
     }
 }
 
