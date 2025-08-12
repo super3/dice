@@ -3,7 +3,7 @@
   <br>
 </h1>
 
-<h4 align="center">A browser-based roguelike dice game with 3D physics built with <a href="https://threejs.org">Three.js</a>, <a href="https://pmndrs.github.io/cannon-es/">Cannon-ES</a>, and <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript">JavaScript</a>.</h4>
+<h4 align="center">A browser-based roguelike dice game with 3D physics built with <a href="https://threejs.org">Three.js</a> and <a href="https://pmndrs.github.io/cannon-es/">Cannon-ES</a>.</h4>
 
 <div align="center">
 
@@ -15,7 +15,9 @@
 </div>
 
 <p align="center">
-  <a href="https://super3.github.io/dice/">🎮 Play the game here</a>
+  <a href="https://super3.github.io/dice/">
+    <img src="https://img.shields.io/badge/🎮_Play_Game-blue?style=for-the-badge" alt="Play Game">
+  </a>
 </p>
 
 ## 🚀 Quick Start
@@ -75,13 +77,6 @@ npm run dev
 
 # Server will open automatically at http://localhost:8000
 ```
-
-### Technologies
-- **Three.js** - 3D graphics and rendering
-- **Cannon-ES** - Physics simulation
-- **ES6 Modules** - Modern JavaScript modules
-- **Jest** - Testing framework
-- **GitHub Pages** - Deployment
 
 ### Project Structure
 ```
